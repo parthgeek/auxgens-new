@@ -20,8 +20,8 @@
   --t3: #3a5e3f;
   --t4: #5a7d5f;
 
-  --lime:    #72c135;
-  --lime-2:  #5aaa1f;
+  --lime:    #336c07;
+  --lime-2:  #2c6b00;
   --forest:  #1b4d22;
   --deep:    #0e2a12;
 
@@ -351,8 +351,22 @@ strong { font-weight: 600; }
     transform: translateY(-1px) scale(1.04);
   }
 }
+@keyframes triad-ring {
+  0%, 28%, 100% {
+    opacity: 0;
+    transform: scale(.82);
+  }
+  11% {
+    opacity: .9;
+  }
+  30% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .hero-triad::after,
+  .hero-triad-icon::before,
   .hero-triad-icon,
   .hero::before,
   .hero::after,
@@ -1534,5 +1548,442 @@ footer::before {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* ── VISUAL REFERENCE PASS ── */
+:root {
+  --paper: #f8fafc;
+  --paper-2: #eef5f0;
+  --paper-3: #e4eee8;
+  --rule: rgba(15, 23, 42, .1);
+  --mist: #f8fafc;
+  --teal-mist: #d9f4ee;
+  --amber-mist: #f1e8c4;
+  --aqua: #13a18f;
+  --aqua-2: #0f766e;
+  --blue: #2563eb;
+  --blue-2: #1e3a8a;
+  --gold: #c99a2e;
+
+  --t1: #071422;
+  --t2: #26384c;
+  --t3: #536579;
+  --t4: #748195;
+
+  --lime: #22c55e;
+  --lime-2: #15803d;
+  --forest: #0f5f32;
+  --deep: #050f1e;
+
+  --accent: #16a34a;
+  --accent-bg: #eaf8ef;
+  --accent-bdr: rgba(34, 197, 94, .28);
+
+  --grad-lime: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+  --grad-forest: linear-gradient(145deg, #050f1e 0%, #071422 48%, #0d2240 100%);
+  --grad-paper: linear-gradient(180deg, #f8fafc 0%, #eef5f0 100%);
+}
+
+body {
+  background:
+    radial-gradient(ellipse 36% 28% at 88% 6%, rgba(34, 197, 94, .1), transparent 70%),
+    radial-gradient(ellipse 34% 24% at 8% 10%, rgba(37, 99, 235, .08), transparent 72%),
+    #f8fafc;
+}
+
+.nav {
+  background: rgba(255, 255, 255, .96);
+  border-bottom: 1px solid rgba(15, 23, 42, .08);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.nav-links a {
+  color: #475569;
+}
+.nav-links a:hover,
+.nav-links a:focus-visible,
+.nav-links a[aria-current="page"] {
+  color: #071422;
+}
+.nav-cta,
+.btn-lime {
+  background: #15803d;
+  box-shadow: 0 14px 28px rgba(21, 128, 61, .22);
+}
+.nav-cta:hover,
+.btn-lime:hover {
+  background: #166534;
+}
+
+.announce {
+  background: #071422;
+  border-bottom: 1px solid rgba(34, 197, 94, .18);
+  color: rgba(74, 222, 128, .74);
+  font-weight: 600;
+}
+.announce a {
+  color: #4ade80;
+}
+
+.hero,
+.service-hero {
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background:
+    linear-gradient(135deg, rgba(5, 15, 30, .98) 0%, rgba(7, 20, 34, .94) 42%, rgba(13, 34, 64, .84) 100%),
+    url('/hero-cyber-security-bg.png') center right / cover no-repeat,
+    #071422;
+}
+.service-hero {
+  background:
+    linear-gradient(135deg, rgba(5, 15, 30, .98) 0%, rgba(7, 20, 34, .94) 44%, rgba(13, 34, 64, .84) 100%),
+    url('/services-cyber-bg.png') center right / cover no-repeat,
+    #071422;
+}
+.hero::before,
+.service-hero::before {
+  background:
+    radial-gradient(rgba(34, 197, 94, .9) 1px, transparent 1px) 0 0 / 32px 32px,
+    radial-gradient(ellipse 58% 48% at 74% 34%, rgba(34, 197, 94, .14), transparent 70%),
+    linear-gradient(90deg, rgba(5, 15, 30, .72), rgba(5, 15, 30, .1) 64%, transparent);
+  opacity: .5;
+}
+.hero::after {
+  background:
+    linear-gradient(180deg, transparent, rgba(5, 15, 30, .28)),
+    radial-gradient(ellipse 34% 24% at 12% 78%, rgba(34, 197, 94, .12), transparent 70%);
+}
+.hero::selection {
+  background: rgba(34, 197, 94, .28);
+}
+.hero h1,
+.service-hero h1 {
+  color: #fff;
+}
+.hero h1 em,
+.service-hero h1 em,
+.h-display em {
+  color: #4ade80 !important;
+}
+.hero .eyebrow,
+.service-hero .eyebrow {
+  color: rgba(74, 222, 128, .66);
+}
+.badge-dot {
+  background: #22c55e;
+  box-shadow: 0 0 18px rgba(34, 197, 94, .78);
+}
+.hero-metrics {
+  border-top-color: rgba(255, 255, 255, .12);
+}
+.metric strong {
+  color: #fff;
+}
+.metric span,
+.hero-desc,
+.service-hero .hero-desc {
+  color: rgba(226, 232, 240, .74);
+}
+.metric-sep {
+  background: rgba(255, 255, 255, .12);
+}
+.hero-tagline {
+  color: rgba(226, 232, 240, .82);
+  border-left-color: #22c55e;
+}
+.btn-border {
+  border-color: rgba(255, 255, 255, .16);
+  color: rgba(255, 255, 255, .82);
+}
+.btn-border:hover {
+  border-color: rgba(255, 255, 255, .34);
+  color: #fff;
+}
+.hero-triad-item {
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.hero-triad-item:hover {
+  background: transparent;
+  border-color: transparent;
+}
+.hero-triad-icon {
+  border-color: rgba(15, 23, 42, .2);
+  background:
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, .98), rgba(255, 255, 255, .74) 45%, rgba(241, 245, 249, .96) 100%);
+  color: #071422;
+  box-shadow: 0 16px 34px rgba(5, 15, 30, .22), inset 0 1px 0 rgba(255, 255, 255, .92);
+}
+.hero-triad-item strong {
+  color: #f8fafc;
+}
+.hero-triad-item span {
+  color: rgba(226, 232, 240, .7);
+}
+
+.hero-right {
+  justify-content: center;
+}
+.hero-triad {
+  width: min(100%, 42rem);
+  margin: 0 0 3rem auto;
+  gap: clamp(.75rem, 2vw, 1.8rem);
+  padding: 1rem 0 .4rem;
+}
+.hero-triad::before {
+  left: calc(16.666% + 2.35rem);
+  right: calc(16.666% + 2.35rem);
+  top: 3.75rem;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(34, 197, 94, .04), rgba(34, 197, 94, .46), rgba(226, 232, 240, .28), rgba(34, 197, 94, .04));
+  box-shadow: 0 0 18px rgba(34, 197, 94, .2);
+}
+.hero-triad::after {
+  left: calc(16.666% + 2.35rem);
+  top: calc(3.75rem - 2px);
+  width: 30%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, rgba(34, 197, 94, .18), rgba(34, 197, 94, .95), rgba(7, 20, 34, .65), transparent);
+  filter: drop-shadow(0 0 12px rgba(34, 197, 94, .42));
+  animation: triad-current 3.4s cubic-bezier(.42, 0, .18, 1) infinite;
+}
+.hero-triad-item {
+  min-width: 0;
+  gap: .68rem;
+}
+.hero-triad-icon {
+  width: clamp(4.7rem, 7.2vw, 5.8rem);
+  height: clamp(4.7rem, 7.2vw, 5.8rem);
+  position: relative;
+}
+.hero-triad-icon::before {
+  content: '';
+  position: absolute;
+  inset: -.45rem;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 197, 94, .28);
+  opacity: 0;
+  transform: scale(.82);
+}
+.hero-triad-item:nth-child(1) .hero-triad-icon::before { animation: triad-ring 3.4s ease-out infinite; }
+.hero-triad-item:nth-child(2) .hero-triad-icon::before { animation: triad-ring 3.4s ease-out 1.05s infinite; }
+.hero-triad-item:nth-child(3) .hero-triad-icon::before { animation: triad-ring 3.4s ease-out 2.1s infinite; }
+.hero-triad-icon svg {
+  width: clamp(2.15rem, 3.4vw, 2.85rem);
+  height: clamp(2.15rem, 3.4vw, 2.85rem);
+}
+.hero-triad-item strong {
+  font-size: clamp(.9rem, 1.38vw, 1.2rem);
+  letter-spacing: .18em;
+  line-height: 1.15;
+  text-shadow: 0 2px 18px rgba(5, 15, 30, .4);
+}
+.hero-triad-item span {
+  font-size: clamp(.84rem, 1.08vw, 1rem);
+  line-height: 1.35;
+  text-shadow: 0 2px 14px rgba(5, 15, 30, .34);
+}
+
+.ticker,
+.section,
+.section-alt,
+.story-flow .section,
+.story-flow .section-alt {
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, .96), rgba(241, 245, 249, .92)),
+    url('/section-cyber-texture.png') center / cover no-repeat,
+    #f8fafc;
+}
+.story-flow {
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, .94), rgba(238, 245, 240, .9)),
+    url('/security-story-bg.png') center / cover fixed no-repeat,
+    #f8fafc;
+}
+.sec-hdr .h-display {
+  color: #071422;
+  font-weight: 400;
+}
+.eyebrow {
+  color: #64748b;
+}
+.sec-note,
+.value-body,
+.service-box p,
+.service-list,
+.cia-box p,
+.pillar-item p,
+.svc-desc,
+.svc-challenges-list li,
+.svc-offering-list li,
+.svc-insight-copy {
+  color: #475569;
+}
+
+.cia-grid,
+.pillars-grid,
+.services-grid,
+.checklist,
+.certs-box,
+.svc-challenges-list,
+.svc-index-list {
+  border-color: rgba(15, 23, 42, .1);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .06);
+}
+.cia-box,
+.pillar-item,
+.service-box,
+.cert-item,
+.svc-offering-group {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(248, 250, 252, .96));
+  border-color: rgba(15, 23, 42, .1);
+}
+.cia-box:hover,
+.pillar-item:hover,
+.service-box:hover,
+.cert-item:hover,
+.svc-offering-group:hover,
+.check-row:hover,
+.svc-challenges-list li:hover,
+.svc-index-link:hover,
+.svc-index-link:focus-visible {
+  background: linear-gradient(180deg, rgba(240, 253, 244, .92), rgba(248, 250, 252, .98));
+}
+.cia-icon,
+.pillar-icon,
+.cert-ico,
+.check-ico {
+  border-radius: 6px;
+  border-color: rgba(34, 197, 94, .26);
+  background: linear-gradient(145deg, rgba(34, 197, 94, .12), rgba(37, 99, 235, .06));
+  color: #15803d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 16px 28px rgba(15, 23, 42, .06);
+}
+.cia-box h4,
+.pillar-item h4,
+.service-box h4,
+.svc-title,
+.svc-offering-name,
+.cert-item strong,
+.check-row strong {
+  color: #071422;
+}
+.certs-head {
+  background:
+    linear-gradient(135deg, rgba(7, 20, 34, .96), rgba(13, 34, 64, .88)),
+    url('/section-cyber-texture.png') center / cover no-repeat;
+}
+.certs-head p {
+  color: rgba(226, 232, 240, .72);
+}
+.certs-head .eyebrow {
+  color: rgba(74, 222, 128, .72);
+}
+.trust-banner,
+.svc-insight-card {
+  background:
+    linear-gradient(135deg, rgba(236, 253, 245, .96), rgba(239, 246, 255, .86));
+  border-color: rgba(34, 197, 94, .22);
+}
+.view-more-btn {
+  background: #071422;
+  border-color: #071422;
+  color: #fff;
+}
+.view-more-btn:hover {
+  background: #0d2240;
+}
+
+.stats,
+.cta,
+.cta#contact {
+  background:
+    linear-gradient(135deg, rgba(5, 15, 30, .97), rgba(7, 20, 34, .92) 48%, rgba(13, 34, 64, .86)),
+    url('/contact-cyber-bg.png') center / cover no-repeat,
+    #071422;
+}
+.stat-n,
+.cta h2 em {
+  background: linear-gradient(135deg, #86efac, #22c55e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-lbl {
+  color: rgba(226, 232, 240, .74);
+}
+.cta-desc {
+  color: rgba(226, 232, 240, .62);
+}
+.cta-meta {
+  color: rgba(226, 232, 240, .42);
+}
+
+footer {
+  background: #071422;
+  border-top-color: rgba(255, 255, 255, .08);
+}
+.foot-grid {
+  border-bottom-color: rgba(255, 255, 255, .08);
+}
+.foot-brand p,
+.foot-col ul a,
+.foot-bottom {
+  color: rgba(226, 232, 240, .58);
+}
+.foot-col h4,
+.foot-tag {
+  color: rgba(74, 222, 128, .72);
+}
+.foot-col ul a:hover {
+  color: #fff;
+}
+
+@media (max-width: 860px) {
+  .hero,
+  .service-hero {
+    background:
+      linear-gradient(180deg, rgba(5, 15, 30, .98) 0%, rgba(7, 20, 34, .94) 58%, rgba(13, 34, 64, .9) 100%),
+      url('/hero-cyber-security-bg.png') 62% top / cover no-repeat,
+      #071422;
+  }
+  .hero-right {
+    justify-content: flex-start;
+  }
+  .hero-triad {
+    width: 100%;
+    margin: .25rem 0 2rem;
+    gap: .55rem;
+  }
+  .hero-triad::before {
+    left: calc(16.666% + 1.65rem);
+    right: calc(16.666% + 1.65rem);
+    top: 2.95rem;
+  }
+  .hero-triad::after {
+    left: calc(16.666% + 1.65rem);
+    top: calc(2.95rem - 2px);
+  }
+  .hero-triad-icon {
+    width: clamp(3.35rem, 14vw, 4.35rem);
+    height: clamp(3.35rem, 14vw, 4.35rem);
+  }
+  .hero-triad-icon svg {
+    width: clamp(1.65rem, 7vw, 2.05rem);
+    height: clamp(1.65rem, 7vw, 2.05rem);
+  }
+  .hero-triad-item {
+    gap: .48rem;
+  }
+  .hero-triad-item strong {
+    font-size: clamp(.68rem, 2.6vw, .82rem);
+    letter-spacing: .1em;
+  }
+  .hero-triad-item span {
+    font-size: clamp(.68rem, 2.5vw, .78rem);
   }
 }
