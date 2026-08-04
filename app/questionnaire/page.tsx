@@ -18,7 +18,7 @@ import { frameworkSummaries } from "../data/questionnaires";
 export const metadata: Metadata = {
   title: "Questionnaire | Auxgens",
   description:
-    "Run focused self-assessments for SOC 2, ISO 27001:2022, GDPR, and VAPT readiness.",
+    "Complete Sri Sri Academy's digital marketing questionnaire or run focused self-assessments for SOC 2, ISO 27001:2022, GDPR, and VAPT readiness.",
 };
 
 const iconMap: Record<string, IconType> = {
@@ -39,34 +39,34 @@ export default function QuestionnairePage() {
             <div className="questionnaire-hero-copy anim">
               <div className="hero-badge">
                 <div className="badge-dot"></div>
-                <span className="eyebrow">Compliance questionnaire</span>
+                <span className="eyebrow">Guided questionnaires</span>
               </div>
               <h1 className="questionnaire-title">
-                Readiness checks for practical security teams.
+                Better briefs. Clearer next steps.
               </h1>
               <p className="questionnaire-lede">
-                Complete a focused 15-20 question assessment, save progress in
-                the browser, and receive category scores with prioritized next
-                steps.
+                Complete Sri Sri Academy&apos;s digital marketing brief or a focused
+                security readiness assessment. Progress stays saved in your
+                browser until you are ready to submit.
               </p>
             </div>
             <div className="questionnaire-hero-panel anim d1" aria-label="Questionnaire summary">
               <div>
-                <span className="questionnaire-panel-kicker">Included frameworks</span>
-                <strong>{frameworkSummaries.length}</strong>
+                <span className="questionnaire-panel-kicker">Available tracks</span>
+                <strong>{frameworkSummaries.length + 1}</strong>
               </div>
               <div>
                 <span className="questionnaire-panel-kicker">Total questions</span>
                 <strong>
                   {frameworkSummaries.reduce(
                     (total, framework) => total + framework.questionCount,
-                    0,
+                    57,
                   )}
                 </strong>
               </div>
               <div>
                 <span className="questionnaire-panel-kicker">Scoring</span>
-                <strong>Auto</strong>
+                <strong>Guided</strong>
               </div>
             </div>
           </div>
@@ -75,17 +75,47 @@ export default function QuestionnairePage() {
         <section className="section questionnaire-library">
           <div className="wrap">
             <div className="questionnaire-section-head anim">
-              <p className="eyebrow">Choose an assessment</p>
-              <h2>Four focused tracks, built from audit-ready control themes.</h2>
+              <p className="eyebrow">Choose a questionnaire</p>
+              <h2>Five focused tracks for discovery and readiness.</h2>
             </div>
             <div className="questionnaire-framework-grid">
+              <article className="questionnaire-framework-card anim">
+                <div className="questionnaire-card-top">
+                  <div className="questionnaire-card-icon">
+                    <PiTargetDuotone aria-hidden="true" focusable="false" />
+                  </div>
+                  <span className="questionnaire-difficulty">Client brief</span>
+                </div>
+                <h3>Sri Sri Academy Marketing Proposal</h3>
+                <p>
+                  Capture admission goals, parent audiences, channels, content,
+                  technology, budget, and success measures for Sri Sri Academy.
+                </p>
+                <div className="questionnaire-card-meta">
+                  <span>57 questions</span>
+                  <span>
+                    <PiClockDuotone aria-hidden="true" focusable="false" />
+                    15-20 min
+                  </span>
+                </div>
+                <div className="questionnaire-card-cats" aria-label="Categories">
+                  <span>Audience</span>
+                  <span>Channels</span>
+                  <span>Technology</span>
+                  <span>Goals</span>
+                </div>
+                <Link href="/digital-marketing-questionnaire" className="btn-lime questionnaire-start">
+                  Start Questionnaire
+                  <PiArrowRightDuotone aria-hidden="true" focusable="false" />
+                </Link>
+              </article>
               {frameworkSummaries.map((framework, index) => {
                 const Icon = iconMap[framework.icon] ?? PiShieldCheckDuotone;
 
                 return (
                   <article
                     key={framework.slug}
-                    className={`questionnaire-framework-card anim d${index}`}
+                    className={`questionnaire-framework-card anim d${index + 1}`}
                   >
                     <div className="questionnaire-card-top">
                       <div className="questionnaire-card-icon">

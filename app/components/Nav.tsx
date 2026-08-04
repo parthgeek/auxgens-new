@@ -7,6 +7,7 @@ import LogoLockup from "./LogoLockup";
 const navItems = [
   { label: "Home", href: "/#home" },
   { label: "Our Services", href: "/services" },
+  { label: "Questionnaires", href: "/questionnaire" },
   { label: "About Us", href: "/about-us" },
 ];
 
