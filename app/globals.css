@@ -2234,6 +2234,15 @@ strong { font-weight: 600; }
   height: 3px;
   background: linear-gradient(90deg, var(--lime), var(--aqua), var(--blue));
 }
+.contact-form-trap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
 .contact-form-head {
   max-width: 680px;
   margin-bottom: 1.9rem;
@@ -2315,6 +2324,12 @@ strong { font-weight: 600; }
   margin-top: 1.4rem;
   padding-top: 1.4rem;
   border-top: 1px solid rgba(168,212,146,.62);
+}
+.contact-security-check {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 18px;
+  min-height: 65px;
 }
 .contact-submit {
   min-height: 3.15rem;

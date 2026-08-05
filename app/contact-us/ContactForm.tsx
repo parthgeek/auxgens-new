@@ -1,7 +1,19 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import Script from "next/script";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { PiPaperPlaneTiltDuotone } from "react-icons/pi";
+import {
+  contactFieldLimits,
+  contactRegions,
+  contactServices,
+} from "./contactFormConfig";
 
 type FormValues = {
   name: string;
@@ -14,6 +26,27 @@ type FormValues = {
 
 type FormErrors = Partial<Record<keyof FormValues, string>>;
 
+type TurnstileApi = {
+  render: (
+    container: HTMLElement,
+    options: {
+      sitekey: string;
+      action: string;
+      callback: (token: string) => void;
+      "expired-callback": () => void;
+      "error-callback": () => void;
+      theme: "light";
+    },
+  ) => string;
+  reset: (widgetId: string) => void;
+};
+
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
+
 const initialValues: FormValues = {
   name: "",
   email: "",
@@ -23,38 +56,30 @@ const initialValues: FormValues = {
   message: "",
 };
 
-const services = [
-  "Forward Deployed AI Engineer",
-  "SOC as a Service",
-  "Cyber Security",
-  "Virtual CISO",
-  "Governance Risk & Compliance",
-  "GDPR / Privacy",
-  "FERPA",
-  "CCPA",
-  "Application Development",
-  "Staff Augmentation/Project Management",
-  "General enquiry",
-];
-
-const regions = [
-  "India / Asia",
-  "United States of America",
-  "EMEA",
-  "Global engagement",
-];
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validate(values: FormValues) {
   const errors: FormErrors = {};
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const name = values.name.trim();
+  const email = values.email.trim();
+  const message = values.message.trim();
 
-  if (!values.name.trim()) {
+  if (!name) {
     errors.name = "Please enter your name.";
+  } else if (
+    name.length < contactFieldLimits.name.min ||
+    name.length > contactFieldLimits.name.max
+  ) {
+    errors.name = `Use ${contactFieldLimits.name.min}–${contactFieldLimits.name.max} characters.`;
   }
 
-  if (!values.email.trim()) {
+  if (!email) {
     errors.email = "Please enter your work email.";
-  } else if (!emailPattern.test(values.email.trim())) {
+  } else if (
+    email.length > contactFieldLimits.email.max ||
+    !emailPattern.test(email)
+  ) {
     errors.email = "Please enter a valid email address.";
   }
 
@@ -62,8 +87,13 @@ function validate(values: FormValues) {
     errors.service = "Please choose a service area.";
   }
 
-  if (!values.message.trim()) {
+  if (!message) {
     errors.message = "Please share a few details about your request.";
+  } else if (
+    message.length < contactFieldLimits.message.min ||
+    message.length > contactFieldLimits.message.max
+  ) {
+    errors.message = `Use ${contactFieldLimits.message.min}–${contactFieldLimits.message.max.toLocaleString()} characters.`;
   }
 
   return errors;
@@ -74,6 +104,47 @@ export default function ContactForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [submitError, setSubmitError] = useState("");
+  const [website, setWebsite] = useState("");
+  const [startedAt, setStartedAt] = useState(0);
+  const [turnstileReady, setTurnstileReady] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setStartedAt(Date.now());
+  }, []);
+
+  useEffect(() => {
+    if (
+      !turnstileSiteKey ||
+      !turnstileReady ||
+      !window.turnstile ||
+      !turnstileContainerRef.current ||
+      turnstileWidgetIdRef.current
+    ) {
+      return;
+    }
+
+    turnstileWidgetIdRef.current = window.turnstile.render(
+      turnstileContainerRef.current,
+      {
+        sitekey: turnstileSiteKey,
+        action: "contact",
+        callback: setTurnstileToken,
+        "expired-callback": () => setTurnstileToken(""),
+        "error-callback": () => setTurnstileToken(""),
+        theme: "light",
+      },
+    );
+  }, [turnstileReady]);
+
+  const resetTurnstile = () => {
+    setTurnstileToken("");
+    if (turnstileWidgetIdRef.current && window.turnstile) {
+      window.turnstile.reset(turnstileWidgetIdRef.current);
+    }
+  };
 
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -103,6 +174,12 @@ export default function ContactForm() {
       return;
     }
 
+    if (turnstileSiteKey && !turnstileToken) {
+      setStatus("error");
+      setSubmitError("Please complete the security check before sending.");
+      return;
+    }
+
     setStatus("loading");
     setSubmitError("");
 
@@ -112,7 +189,12 @@ export default function ContactForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          website,
+          startedAt,
+          turnstileToken,
+        }),
       });
       const result = (await response.json()) as {
         success?: boolean;
@@ -124,6 +206,8 @@ export default function ContactForm() {
       }
 
       setValues(initialValues);
+      setWebsite("");
+      setStartedAt(Date.now());
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -132,13 +216,17 @@ export default function ContactForm() {
           ? error.message
           : "We could not send your enquiry. Please try again.",
       );
+    } finally {
+      if (turnstileSiteKey) {
+        resetTurnstile();
+      }
     }
   };
 
   const statusMessage = {
     idle: "Fields marked with an asterisk are required.",
     loading: "Sending your enquiry securely...",
-    success: "Thank you. Your enquiry has been sent and a confirmation email is on its way.",
+    success: "Thank you. Your enquiry has been sent to our team.",
     error: submitError,
   }[status];
 
@@ -149,6 +237,25 @@ export default function ContactForm() {
       onSubmit={handleSubmit}
       noValidate
     >
+      {turnstileSiteKey && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onLoad={() => setTurnstileReady(true)}
+        />
+      )}
+      <div className="contact-form-trap" aria-hidden="true">
+        <label htmlFor="website">Leave this field empty</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={website}
+          onChange={(event) => setWebsite(event.target.value)}
+        />
+      </div>
       <div className="contact-form-head">
         <p className="eyebrow">Send an enquiry</p>
         <h2>Protect what matters.</h2>
@@ -166,6 +273,8 @@ export default function ContactForm() {
             name="name"
             type="text"
             autoComplete="name"
+            minLength={contactFieldLimits.name.min}
+            maxLength={contactFieldLimits.name.max}
             value={values.name}
             onChange={handleChange}
             aria-invalid={Boolean(errors.name)}
@@ -182,6 +291,7 @@ export default function ContactForm() {
             name="email"
             type="email"
             autoComplete="email"
+            maxLength={contactFieldLimits.email.max}
             value={values.email}
             onChange={handleChange}
             aria-invalid={Boolean(errors.email)}
@@ -198,6 +308,7 @@ export default function ContactForm() {
             name="company"
             type="text"
             autoComplete="organization"
+            maxLength={contactFieldLimits.company.max}
             value={values.company}
             onChange={handleChange}
             aria-describedby="company-help"
@@ -216,7 +327,7 @@ export default function ContactForm() {
             aria-describedby="service-help service-error"
           >
             <option value="">Select a service</option>
-            {services.map((service) => (
+            {contactServices.map((service) => (
               <option key={service} value={service}>{service}</option>
             ))}
           </select>
@@ -234,7 +345,7 @@ export default function ContactForm() {
             aria-describedby="region-help"
           >
             <option value="">Select a region</option>
-            {regions.map((region) => (
+            {contactRegions.map((region) => (
               <option key={region} value={region}>{region}</option>
             ))}
           </select>
@@ -247,6 +358,8 @@ export default function ContactForm() {
             id="message"
             name="message"
             rows={7}
+            minLength={contactFieldLimits.message.min}
+            maxLength={contactFieldLimits.message.max}
             value={values.message}
             onChange={handleChange}
             aria-invalid={Boolean(errors.message)}
@@ -256,6 +369,12 @@ export default function ContactForm() {
           {errors.message && <span id="message-error" className="field-error">{errors.message}</span>}
         </div>
       </div>
+
+      {turnstileSiteKey && (
+        <div className="contact-security-check">
+          <div ref={turnstileContainerRef} />
+        </div>
+      )}
 
       <div className="contact-form-actions">
         <button className="contact-submit" type="submit" disabled={status === "loading"}>
