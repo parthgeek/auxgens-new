@@ -70,6 +70,68 @@ strong { font-weight: 600; }
   line-height: 1.06; letter-spacing: -.015em; color: var(--t1);
 }
 
+/* ── SSA ACTIVITY SHEET ── */
+.ssa-hero {
+  padding: 4.8rem 0 4rem;
+  border-bottom: 1px solid var(--rule);
+  background:
+    radial-gradient(ellipse 42% 75% at 82% 45%, rgba(46,159,154,.17), transparent 70%),
+    linear-gradient(115deg, #f7fbff 0%, #eef6e8 62%, #e3eedb 100%);
+}
+.ssa-hero-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: 5rem; align-items: end; }
+.ssa-hero-copy h1 { max-width: 690px; margin: .9rem 0 1.25rem; font-family: var(--fn-d); font-size: clamp(2.7rem, 5vw, 4.8rem); font-weight: 300; line-height: 1.03; letter-spacing: -.025em; }
+.ssa-hero-copy p { max-width: 620px; color: var(--t3); font-size: 1.08rem; }
+.ssa-summary { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--accent-bdr); border-bottom: 1px solid var(--accent-bdr); }
+.ssa-summary div { padding: 1rem .75rem 1.1rem 0; border-right: 1px solid var(--accent-bdr); }
+.ssa-summary div + div { padding-left: .75rem; }
+.ssa-summary div:last-child { border-right: 0; }
+.ssa-summary span { display: block; color: var(--t4); font-size: .68rem; font-weight: 600; letter-spacing: .1em; line-height: 1.2; text-transform: uppercase; }
+.ssa-summary strong { display: block; margin-top: .45rem; color: var(--forest); font-family: var(--fn-d); font-size: 2.45rem; font-weight: 500; line-height: 1; }
+.ssa-workspace { padding: 4.8rem 0 6.5rem; }
+.ssa-workspace-grid { display: grid; grid-template-columns: minmax(280px, .72fr) minmax(0, 1.75fr); gap: clamp(2rem, 5vw, 5.5rem); align-items: start; }
+.ssa-entry-panel { position: sticky; top: 128px; padding: 1.5rem; background: rgba(255,255,255,.63); border-top: 3px solid var(--lime); box-shadow: 0 18px 35px -28px rgba(27,77,34,.5); }
+.ssa-panel-heading { display: flex; gap: .8rem; align-items: flex-start; padding-bottom: 1.15rem; border-bottom: 1px solid var(--rule); }
+.ssa-panel-heading > svg { flex: 0 0 auto; margin-top: .1rem; color: var(--accent); font-size: 1.7rem; }
+.ssa-panel-heading h2, .ssa-sheet-header h2 { margin-top: .15rem; font-family: var(--fn-d); font-size: 2rem; font-weight: 400; line-height: 1; }
+.ssa-form { display: grid; gap: 1rem; margin-top: 1.45rem; }
+.ssa-form label { display: grid; gap: .4rem; color: var(--t2); font-size: .83rem; font-weight: 600; letter-spacing: .035em; }
+.ssa-form label > span:not(.ssa-optional) { color: var(--accent); }
+.ssa-optional { color: var(--t4); font-size: .72rem; font-weight: 400; text-transform: none; }
+.ssa-form input, .ssa-form select, .ssa-form textarea { width: 100%; border: 1px solid var(--rule); border-radius: 2px; background: rgba(255,255,255,.83); color: var(--t1); font: inherit; font-size: .92rem; font-weight: 400; outline: none; padding: .7rem .75rem; transition: border-color .2s ease, box-shadow .2s ease; }
+.ssa-form textarea { resize: vertical; line-height: 1.55; }
+.ssa-form input:focus, .ssa-form select:focus, .ssa-form textarea:focus { border-color: var(--aqua); box-shadow: 0 0 0 3px rgba(46,159,154,.12); }
+.ssa-form-two-column { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.ssa-save, .ssa-refresh, .ssa-state button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border: 0; cursor: pointer; font-family: var(--fn-b); font-weight: 600; transition: transform .15s ease, opacity .2s ease, background .2s ease; }
+.ssa-save { width: 100%; margin-top: .2rem; padding: .78rem 1rem; background: var(--grad-lime); color: #fff; letter-spacing: .025em; }
+.ssa-save svg { font-size: 1.2rem; }
+.ssa-save:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.ssa-save:active:not(:disabled), .ssa-refresh:active, .ssa-state button:active { transform: translateY(1px) scale(.99); }
+.ssa-save:disabled, .ssa-refresh:disabled { cursor: wait; opacity: .65; }
+.ssa-form-error { display: flex; gap: .45rem; color: #a33b26; font-size: .83rem; line-height: 1.45; }
+.ssa-form-error svg { flex: 0 0 auto; margin-top: .1rem; font-size: 1.1rem; }
+.ssa-sheet { min-width: 0; }
+.ssa-sheet-header { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-end; padding-bottom: 1.45rem; border-bottom: 1px solid var(--rule); }
+.ssa-refresh { padding: .55rem .75rem; border: 1px solid var(--accent-bdr); background: transparent; color: var(--forest); font-size: .8rem; }
+.ssa-refresh:hover { background: var(--accent-bg); }
+.ssa-filter-row { display: flex; gap: .4rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid var(--rule); }
+.ssa-filter-row button { border: 1px solid transparent; background: transparent; color: var(--t4); cursor: pointer; font-family: var(--fn-b); font-size: .8rem; padding: .45rem .55rem; transition: color .2s ease, border-color .2s ease, background .2s ease; }
+.ssa-filter-row button:hover, .ssa-filter-row button.is-active { border-color: var(--accent-bdr); background: var(--accent-bg); color: var(--forest); }
+.ssa-filter-row span { margin-left: .25rem; font-size: .7rem; font-weight: 600; }
+.ssa-table-wrap { overflow-x: auto; }
+.ssa-table { width: 100%; border-collapse: collapse; font-size: .9rem; text-align: left; }
+.ssa-table th { padding: .9rem .8rem; border-bottom: 1px solid var(--rule); color: var(--t4); font-size: .68rem; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; white-space: nowrap; }
+.ssa-table th:first-child, .ssa-table td:first-child { padding-left: 0; }
+.ssa-table td { padding: 1.05rem .8rem; border-bottom: 1px solid rgba(197,220,186,.7); color: var(--t3); vertical-align: top; }
+.ssa-table td:first-child { width: 38%; color: var(--t1); }
+.ssa-table td strong { display: block; font-weight: 600; line-height: 1.35; }
+.ssa-table td strong + span { display: -webkit-box; overflow: hidden; margin-top: .35rem; color: var(--t4); font-size: .8rem; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.ssa-status, .ssa-priority { display: inline-flex; align-items: center; gap: .25rem; width: max-content; padding: .24rem .42rem; border-radius: 2px; font-size: .72rem; font-weight: 600; line-height: 1.1; text-transform: capitalize; white-space: nowrap; }
+.ssa-status-planned { background: var(--blue-mist); color: var(--blue-2); }.ssa-status-in_progress { background: var(--amber-mist); color: #725408; }.ssa-status-blocked { background: #f7d9cf; color: #8f361f; }.ssa-status-done { background: var(--accent-bg); color: var(--forest); }
+.ssa-priority { color: var(--t4); }.ssa-priority svg { font-size: 1rem; }.ssa-priority-high { color: #9b431f; }.ssa-priority-medium { color: #7b6018; }.ssa-priority-low { color: var(--t4); }
+.ssa-loading { display: grid; gap: .85rem; padding-top: 1.2rem; }.ssa-loading span { display: block; height: 64px; background: linear-gradient(90deg, rgba(227,238,219,.4), rgba(255,255,255,.86), rgba(227,238,219,.4)); background-size: 200% 100%; animation: ssa-shimmer 1.3s ease infinite; }.ssa-loading span:nth-child(2) { width: 93%; }.ssa-loading span:nth-child(3) { width: 86%; }
+@keyframes ssa-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }.ssa-spin { animation: ssa-spin .8s linear infinite; } @keyframes ssa-spin { to { transform: rotate(360deg); } }
+.ssa-state { display: grid; justify-items: start; gap: .55rem; padding: 3.5rem 1rem 2rem 0; }.ssa-state > svg { color: var(--aqua); font-size: 2.2rem; }.ssa-state h3 { font-family: var(--fn-d); font-size: 1.85rem; font-weight: 400; }.ssa-state p { max-width: 470px; color: var(--t4); }.ssa-state-error > svg, .ssa-state-error p { color: #9b432c; }.ssa-state button { margin-top: .2rem; padding: .6rem .85rem; background: var(--forest); color: #fff; }
+
 /* ── NAV ── */
 .nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 900;
@@ -419,6 +481,26 @@ strong { font-weight: 600; }
   .cta::after {
     animation: none;
   }
+}
+
+@media (max-width: 920px) {
+  .ssa-hero-grid,
+  .ssa-workspace-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .ssa-summary { max-width: 460px; }
+  .ssa-entry-panel { position: static; max-width: 640px; }
+}
+
+@media (max-width: 620px) {
+  .ssa-hero { padding: 3rem 0 2.7rem; }
+  .ssa-hero-copy h1 { font-size: clamp(2.5rem, 13vw, 3.4rem); }
+  .ssa-workspace { padding: 2.8rem 0 4rem; }
+  .ssa-summary strong { font-size: 2.15rem; }
+  .ssa-entry-panel { margin: 0 -5.55%; padding: 1.25rem 5.55%; }
+  .ssa-sheet-header { align-items: flex-start; flex-direction: column; }
+  .ssa-form-two-column { grid-template-columns: 1fr; }
+  .ssa-table { min-width: 680px; }
+  .ssa-filter-row { flex-wrap: nowrap; overflow-x: auto; }
+  .ssa-filter-row button { flex: 0 0 auto; }
 }
 .hero-desc {
   font-size: 1rem; color: var(--t1);
