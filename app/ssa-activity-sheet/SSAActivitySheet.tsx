@@ -1,26 +1,37 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   PiArrowClockwiseDuotone,
+  PiCalendarBlankDuotone,
+  PiCaretDownDuotone,
   PiCheckCircleDuotone,
   PiCircleNotchDuotone,
   PiClipboardTextDuotone,
+  PiClockDuotone,
   PiFlagDuotone,
+  PiListChecksDuotone,
+  PiMagnifyingGlassDuotone,
   PiPlusDuotone,
+  PiSlidersHorizontalDuotone,
   PiWarningCircleDuotone,
+  PiXDuotone,
 } from "react-icons/pi";
 
 type ActivityStatus = "planned" | "in_progress" | "blocked" | "done";
-type ActivityPriority = "low" | "medium" | "high";
+type ActivityCategory = "marketing" | "website" | "admissions_events";
+type StatusFilter = "all" | ActivityStatus;
 
 type Activity = {
   id: string;
   title: string;
   owner: string;
+  category: ActivityCategory;
   status: ActivityStatus;
-  priority: ActivityPriority;
-  due_date: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  dependency: string;
+  detail_status: string;
   notes: string;
   created_at: string;
 };
@@ -28,20 +39,47 @@ type Activity = {
 type ActivityForm = {
   title: string;
   owner: string;
+  category: ActivityCategory;
   status: ActivityStatus;
-  priority: ActivityPriority;
-  due_date: string;
+  start_date: string;
+  end_date: string;
+  dependency: string;
+  detail_status: string;
   notes: string;
 };
 
-const initialForm: ActivityForm = {
-  title: "",
-  owner: "",
-  status: "planned",
-  priority: "medium",
-  due_date: "",
-  notes: "",
-};
+type FormErrors = Partial<Record<keyof ActivityForm, string>>;
+type OptionalColumn = "start_date" | "end_date" | "owner" | "dependency" | "status" | "detail_status" | "notes";
+
+const categories: Array<{
+  id: ActivityCategory;
+  label: string;
+  shortLabel: string;
+  description: string;
+  placeholder: string;
+}> = [
+  {
+    id: "marketing",
+    label: "Marketing activities",
+    shortLabel: "Marketing",
+    description: "Campaigns, content, partnerships, and outreach",
+    placeholder: "e.g. Finalise the campaign calendar",
+  },
+  {
+    id: "website",
+    label: "Website activities",
+    shortLabel: "Website",
+    description: "Pages, content, fixes, and site improvements",
+    placeholder: "e.g. Publish the new admissions page",
+  },
+  {
+    id: "admissions_events",
+    label: "Admissions & events",
+    shortLabel: "Admissions",
+    description: "Enrolment follow-ups, school visits, and events",
+    placeholder: "e.g. Prepare the open-house registration desk",
+  },
+];
 
 const statusText: Record<ActivityStatus, string> = {
   planned: "Planned",
@@ -50,24 +88,81 @@ const statusText: Record<ActivityStatus, string> = {
   done: "Done",
 };
 
+const statusFilters: StatusFilter[] = ["all", "planned", "in_progress", "blocked", "done"];
+
+const optionalColumns: Array<{ id: OptionalColumn; label: string }> = [
+  { id: "start_date", label: "Start date" },
+  { id: "end_date", label: "End date" },
+  { id: "owner", label: "Owner" },
+  { id: "dependency", label: "Dependency" },
+  { id: "status", label: "Status" },
+  { id: "detail_status", label: "Detail status" },
+  { id: "notes", label: "Notes / remark" },
+];
+
+function createInitialForm(category: ActivityCategory): ActivityForm {
+  return {
+    title: "",
+    owner: "",
+    category,
+    status: "planned",
+    start_date: "",
+    end_date: "",
+    dependency: "",
+    detail_status: "",
+    notes: "",
+  };
+}
+
 function formatDate(value: string | null) {
-  if (!value) return "No deadline";
-  const date = new Date(`${value}T00:00:00`);
+  if (!value) return "—";
   return new Intl.DateTimeFormat("en-IN", {
-    day: "numeric",
+    day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(date);
+  }).format(new Date(`${value}T00:00:00`));
+}
+
+function validateField(field: keyof ActivityForm, value: string, form: ActivityForm) {
+  if (field === "title" && !value.trim()) return "Add a task or activity.";
+  if (field === "owner" && !value.trim()) return "Add the person responsible.";
+  if (field === "start_date" && !value) return "Select a start date.";
+  if (field === "end_date") {
+    if (!value) return "Select an end date.";
+    if (form.start_date && value < form.start_date) return "End date must be after the start date.";
+  }
+  return undefined;
+}
+
+function FieldError({ message }: { message?: string }) {
+  return message ? <span className="ssa-field-error">{message}</span> : null;
 }
 
 export default function SSAActivitySheet() {
+  const [activeCategory, setActiveCategory] = useState<ActivityCategory>("website");
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [form, setForm] = useState<ActivityForm>(initialForm);
+  const [form, setForm] = useState<ActivityForm>(() => createInitialForm("website"));
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | ActivityStatus>("all");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [compactRows, setCompactRows] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<Record<OptionalColumn, boolean>>({
+    start_date: true,
+    end_date: true,
+    owner: true,
+    dependency: true,
+    status: true,
+    detail_status: true,
+    notes: true,
+  });
+  const formPanelRef = useRef<HTMLElement>(null);
+  const activityInputRef = useRef<HTMLInputElement>(null);
 
   const loadActivities = async () => {
     setLoading(true);
@@ -88,49 +183,78 @@ export default function SSAActivitySheet() {
     void loadActivities();
   }, []);
 
-  const visibleActivities = useMemo(
-    () =>
-      statusFilter === "all"
-        ? activities
-        : activities.filter((activity) => activity.status === statusFilter),
-    [activities, statusFilter],
+  const activeCategoryData = categories.find((category) => category.id === activeCategory) ?? categories[1];
+  const categoryActivities = useMemo(
+    () => activities.filter((activity) => activity.category === activeCategory),
+    [activeCategory, activities],
   );
-
   const counts = useMemo(
-    () =>
-      activities.reduce(
-        (current, activity) => ({
-          ...current,
-          [activity.status]: current[activity.status] + 1,
-        }),
-        { planned: 0, in_progress: 0, blocked: 0, done: 0 } as Record<ActivityStatus, number>,
-      ),
-    [activities],
+    () => categoryActivities.reduce(
+      (current, activity) => ({ ...current, [activity.status]: current[activity.status] + 1 }),
+      { planned: 0, in_progress: 0, blocked: 0, done: 0 } as Record<ActivityStatus, number>,
+    ),
+    [categoryActivities],
   );
+  const visibleActivities = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    return categoryActivities.filter((activity) => {
+      const matchesStatus = statusFilter === "all" || activity.status === statusFilter;
+      const matchesSearch = !normalizedQuery || [
+        activity.title,
+        activity.owner,
+        activity.dependency,
+        activity.detail_status,
+        activity.notes,
+      ].join(" ").toLowerCase().includes(normalizedQuery);
+      return matchesStatus && matchesSearch;
+    });
+  }, [categoryActivities, searchQuery, statusFilter]);
 
   const updateForm = <K extends keyof ActivityForm>(field: K, value: ActivityForm[K]) => {
-    setForm((current) => ({ ...current, [field]: value }));
+    const nextForm = { ...form, [field]: value };
+    setForm(nextForm);
+    setFormErrors((current) => ({
+      ...current,
+      [field]: validateField(field, String(value), nextForm),
+      ...(field === "start_date" && nextForm.end_date
+        ? { end_date: validateField("end_date", nextForm.end_date, nextForm) }
+        : {}),
+    }));
+    setFormError("");
+    setSuccessMessage("");
+  };
+
+  const validateForm = () => {
+    const nextErrors: FormErrors = {};
+    (Object.keys(form) as Array<keyof ActivityForm>).forEach((field) => {
+      const fieldError = validateField(field, String(form[field]), form);
+      if (fieldError) nextErrors[field] = fieldError;
+    });
+    setFormErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const submitActivity = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError("");
-    if (!form.title.trim() || !form.owner.trim()) {
-      setFormError("Add both an activity and the person responsible for it.");
-      return;
-    }
+    setSuccessMessage("");
+    if (!validateForm()) return;
 
     setSaving(true);
     try {
       const response = await fetch("/api/ssa-activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, due_date: form.due_date || null }),
+        body: JSON.stringify(form),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Unable to save activity.");
       setActivities((current) => [result.activity, ...current]);
-      setForm(initialForm);
+      setForm(createInitialForm(activeCategory));
+      setFormErrors({});
+      setStatusFilter("all");
+      setSuccessMessage(`Added to ${activeCategoryData.label.toLowerCase()}.`);
+      activityInputRef.current?.focus();
     } catch (caught) {
       setFormError(caught instanceof Error ? caught.message : "Unable to save activity.");
     } finally {
@@ -138,101 +262,256 @@ export default function SSAActivitySheet() {
     }
   };
 
+  const chooseCategory = (category: ActivityCategory) => {
+    setActiveCategory(category);
+    setForm((current) => ({ ...current, category }));
+    setStatusFilter("all");
+    setSearchQuery("");
+    setSuccessMessage("");
+  };
+
+  const focusForm = () => {
+    formPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => activityInputRef.current?.focus(), 350);
+  };
+
   return (
-    <>
+    <div className="ssa-activity-page">
       <section className="ssa-hero">
-        <div className="wrap ssa-hero-grid">
-          <div className="ssa-hero-copy anim">
-            <div className="hero-badge">
-              <div className="badge-dot" />
-              <span className="eyebrow">Sri Sri Academy workspace</span>
-            </div>
-            <h1>One clear view of the work in motion.</h1>
-            <p>
-              Log the team&apos;s SSA activity here, then use the live sheet to see what is planned,
-              moving, blocked, or complete.
-            </p>
+        <div className="ssa-wrap ssa-hero-grid">
+          <div className="ssa-hero-copy">
+            <span className="eyebrow">SSA team workboard</span>
+            <h1>Team activity desk</h1>
+            <p className="ssa-hero-lead">Plan clearly. Move work forward.</p>
+            <p>Log the team&apos;s activity, record dependencies, and keep every task moving from plan to completion.</p>
           </div>
-          <div className="ssa-summary anim d1" aria-label="Activity summary">
-            <div><span>In progress</span><strong>{counts.in_progress}</strong></div>
-            <div><span>Blocked</span><strong>{counts.blocked}</strong></div>
-            <div><span>Completed</span><strong>{counts.done}</strong></div>
+          <div className="ssa-summary" aria-label={`${activeCategoryData.label} summary`}>
+            <div><PiListChecksDuotone aria-hidden="true" /><span><strong>{categoryActivities.length}</strong>All work</span></div>
+            <div><PiCalendarBlankDuotone aria-hidden="true" /><span><strong>{counts.planned}</strong>Planned</span></div>
+            <div><PiClockDuotone aria-hidden="true" /><span><strong>{counts.in_progress}</strong>In progress</span></div>
+            <div><PiFlagDuotone aria-hidden="true" /><span><strong>{counts.done}</strong>Done</span></div>
           </div>
         </div>
       </section>
 
-      <section className="ssa-workspace">
-        <div className="wrap ssa-workspace-grid">
-          <aside className="ssa-entry-panel anim">
+      <nav className="ssa-category-nav" aria-label="Activity categories">
+        <div className="ssa-wrap ssa-category-tabs" role="tablist">
+          {categories.map((category) => {
+            const isActive = category.id === activeCategory;
+            return (
+              <button
+                key={category.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls="ssa-workboard-panel"
+                className={isActive ? "is-active" : ""}
+                onClick={() => chooseCategory(category.id)}
+              >
+                <strong><span className="ssa-tab-full">{category.label}</span><span className="ssa-tab-short">{category.shortLabel}</span></strong>
+                <span>{category.description}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <section id="ssa-workboard-panel" role="tabpanel" className="ssa-workspace">
+        <div className="ssa-wrap ssa-workspace-grid">
+          <aside ref={formPanelRef} className="ssa-entry-panel">
             <div className="ssa-panel-heading">
-              <PiPlusDuotone aria-hidden="true" />
-              <div><p className="eyebrow">New update</p><h2>Add an activity</h2></div>
+              <div><p className="eyebrow">New update</p><h2>Add activity</h2></div>
+              <span className="ssa-panel-icon"><PiPlusDuotone aria-hidden="true" /></span>
             </div>
-            <form className="ssa-form" onSubmit={submitActivity}>
+            <p className="ssa-form-context">Adding to <strong>{activeCategoryData.label}</strong></p>
+
+            <form className="ssa-form" onSubmit={submitActivity} noValidate>
               <label>
-                Activity <span aria-hidden="true">*</span>
-                <input value={form.title} onChange={(event) => updateForm("title", event.target.value)} maxLength={180} placeholder="e.g. Finalise campaign calendar" />
+                Task / activity <span aria-hidden="true">*</span>
+                <input
+                  ref={activityInputRef}
+                  value={form.title}
+                  onChange={(event) => updateForm("title", event.target.value)}
+                  onBlur={() => setFormErrors((current) => ({ ...current, title: validateField("title", form.title, form) }))}
+                  aria-invalid={Boolean(formErrors.title)}
+                  maxLength={180}
+                  placeholder={activeCategoryData.placeholder}
+                />
+                <FieldError message={formErrors.title} />
               </label>
+
               <label>
                 Owner <span aria-hidden="true">*</span>
-                <input value={form.owner} onChange={(event) => updateForm("owner", event.target.value)} maxLength={100} placeholder="Team member responsible" />
+                <input
+                  value={form.owner}
+                  onChange={(event) => updateForm("owner", event.target.value)}
+                  onBlur={() => setFormErrors((current) => ({ ...current, owner: validateField("owner", form.owner, form) }))}
+                  aria-invalid={Boolean(formErrors.owner)}
+                  maxLength={100}
+                  placeholder="Team member responsible"
+                />
+                <FieldError message={formErrors.owner} />
               </label>
+
               <div className="ssa-form-two-column">
                 <label>
-                  Status
+                  Start date <span aria-hidden="true">*</span>
+                  <input
+                    type="date"
+                    value={form.start_date}
+                    onChange={(event) => updateForm("start_date", event.target.value)}
+                    onBlur={() => setFormErrors((current) => ({ ...current, start_date: validateField("start_date", form.start_date, form) }))}
+                    aria-invalid={Boolean(formErrors.start_date)}
+                  />
+                  <FieldError message={formErrors.start_date} />
+                </label>
+                <label>
+                  End date <span aria-hidden="true">*</span>
+                  <input
+                    type="date"
+                    min={form.start_date || undefined}
+                    value={form.end_date}
+                    onChange={(event) => updateForm("end_date", event.target.value)}
+                    onBlur={() => setFormErrors((current) => ({ ...current, end_date: validateField("end_date", form.end_date, form) }))}
+                    aria-invalid={Boolean(formErrors.end_date)}
+                  />
+                  <FieldError message={formErrors.end_date} />
+                </label>
+              </div>
+
+              <label>
+                Dependency <span className="ssa-optional">optional</span>
+                <input value={form.dependency} onChange={(event) => updateForm("dependency", event.target.value)} maxLength={300} placeholder="What must happen first?" />
+              </label>
+
+              <label>
+                Status
+                <span className="ssa-select-wrap">
                   <select value={form.status} onChange={(event) => updateForm("status", event.target.value as ActivityStatus)}>
                     {Object.entries(statusText).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
-                </label>
-                <label>
-                  Priority
-                  <select value={form.priority} onChange={(event) => updateForm("priority", event.target.value as ActivityPriority)}>
-                    <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
-                  </select>
-                </label>
-              </div>
-              <label>
-                Target date <span className="ssa-optional">optional</span>
-                <input type="date" value={form.due_date} onChange={(event) => updateForm("due_date", event.target.value)} />
+                  <PiCaretDownDuotone aria-hidden="true" />
+                </span>
               </label>
+
               <label>
-                Notes <span className="ssa-optional">optional</span>
-                <textarea value={form.notes} onChange={(event) => updateForm("notes", event.target.value)} maxLength={2000} rows={4} placeholder="What is needed next, or what is holding this up?" />
+                Detail status <span className="ssa-optional">optional</span>
+                <input value={form.detail_status} onChange={(event) => updateForm("detail_status", event.target.value)} maxLength={400} placeholder="e.g. Design review in progress" />
               </label>
-              {formError && <p className="ssa-form-error" role="alert"><PiWarningCircleDuotone aria-hidden="true" />{formError}</p>}
+
+              <label>
+                Notes / remark <span className="ssa-optional">optional</span>
+                <textarea value={form.notes} onChange={(event) => updateForm("notes", event.target.value)} maxLength={2000} rows={3} placeholder="Add a useful hand-off note" />
+              </label>
+
+              {formError ? <p className="ssa-form-error" role="alert"><PiWarningCircleDuotone aria-hidden="true" />{formError}</p> : null}
+              {successMessage ? <p className="ssa-form-success" role="status"><PiCheckCircleDuotone aria-hidden="true" />{successMessage}</p> : null}
               <button className="ssa-save" type="submit" disabled={saving}>
-                {saving ? <PiCircleNotchDuotone className="ssa-spin" aria-hidden="true" /> : <PiCheckCircleDuotone aria-hidden="true" />}
-                {saving ? "Saving update" : "Save to activity sheet"}
+                {saving ? <PiCircleNotchDuotone className="ssa-spin" aria-hidden="true" /> : <PiPlusDuotone aria-hidden="true" />}
+                {saving ? "Saving activity" : "Add activity"}
               </button>
             </form>
           </aside>
 
-          <div className="ssa-sheet anim d1">
+          <div className="ssa-sheet">
             <div className="ssa-sheet-header">
-              <div><p className="eyebrow">Live activity sheet</p><h2>SSA workboard</h2></div>
-              <button className="ssa-refresh" type="button" onClick={() => void loadActivities()} disabled={loading}>
-                <PiArrowClockwiseDuotone aria-hidden="true" /> Refresh
-              </button>
+              <div><p className="eyebrow">Live activity sheet</p><h2>{activeCategoryData.shortLabel} workboard</h2><p>{activeCategoryData.description}.</p></div>
+              <button className="ssa-add-shortcut" type="button" onClick={focusForm}><PiPlusDuotone aria-hidden="true" />Add activity</button>
             </div>
+
+            <div className="ssa-list-tools">
+              <label className="ssa-search">
+                <span className="sr-only">Search activities</span>
+                <PiMagnifyingGlassDuotone aria-hidden="true" />
+                <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search task, owner, or note" />
+                {searchQuery ? <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search"><PiXDuotone aria-hidden="true" /></button> : null}
+              </label>
+
+              <div className="ssa-tool-actions">
+                <button className="ssa-refresh" type="button" onClick={() => void loadActivities()} disabled={loading}>
+                  <PiArrowClockwiseDuotone className={loading ? "ssa-spin" : ""} aria-hidden="true" />Refresh
+                </button>
+                <div className="ssa-settings-wrap">
+                  <button className="ssa-settings-button" type="button" onClick={() => setSettingsOpen((open) => !open)} aria-expanded={settingsOpen} aria-haspopup="dialog">
+                    <PiSlidersHorizontalDuotone aria-hidden="true" />List settings
+                  </button>
+                  {settingsOpen ? (
+                    <div className="ssa-settings-panel" role="dialog" aria-label="Activity list settings">
+                      <div><strong>Visible columns</strong><span>Applies to every activity list</span></div>
+                      {optionalColumns.map((column) => (
+                        <label key={column.id}>
+                          <input type="checkbox" checked={visibleColumns[column.id]} onChange={(event) => setVisibleColumns((current) => ({ ...current, [column.id]: event.target.checked }))} />
+                          {column.label}
+                        </label>
+                      ))}
+                      <label className="ssa-density-setting">
+                        <input type="checkbox" checked={compactRows} onChange={(event) => setCompactRows(event.target.checked)} />
+                        Use compact rows
+                      </label>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
             <div className="ssa-filter-row" aria-label="Filter activities by status">
-              {(["all", "planned", "in_progress", "blocked", "done"] as const).map((status) => (
+              {statusFilters.map((status) => (
                 <button key={status} type="button" className={statusFilter === status ? "is-active" : ""} onClick={() => setStatusFilter(status)}>
-                  {status === "all" ? "All work" : statusText[status]} <span>{status === "all" ? activities.length : counts[status]}</span>
+                  {status === "all" ? "All work" : statusText[status]} <span>{status === "all" ? categoryActivities.length : counts[status]}</span>
                 </button>
               ))}
             </div>
-            {loading ? <div className="ssa-loading" aria-label="Loading activities"><span /><span /><span /></div> : error ? (
+
+            {loading ? (
+              <div className="ssa-loading" aria-label="Loading activities"><span /><span /><span /></div>
+            ) : error ? (
               <div className="ssa-state ssa-state-error" role="alert"><PiWarningCircleDuotone aria-hidden="true" /><p>{error}</p><button type="button" onClick={() => void loadActivities()}>Try again</button></div>
             ) : visibleActivities.length === 0 ? (
-              <div className="ssa-state"><PiClipboardTextDuotone aria-hidden="true" /><h3>{activities.length ? "No matching activities" : "The sheet is ready for its first update."}</h3><p>{activities.length ? "Choose another status to see more work." : "Use the form to capture the first SSA task, owner, and next step."}</p></div>
+              <div className="ssa-state">
+                <PiClipboardTextDuotone aria-hidden="true" />
+                <h3>{categoryActivities.length ? "No matching activities" : `Start the ${activeCategoryData.shortLabel.toLowerCase()} list`}</h3>
+                <p>{categoryActivities.length ? "Try another search or return to all work." : "Use the form to add the first activity and assign its owner."}</p>
+                {categoryActivities.length
+                  ? <button type="button" onClick={() => { setSearchQuery(""); setStatusFilter("all"); }}>Clear filters</button>
+                  : <button type="button" onClick={focusForm}>Add activity</button>}
+              </div>
             ) : (
-              <div className="ssa-table-wrap"><table className="ssa-table"><thead><tr><th>Activity</th><th>Owner</th><th>Status</th><th>Priority</th><th>Target</th></tr></thead><tbody>{visibleActivities.map((activity) => (
-                <tr key={activity.id}><td><strong>{activity.title}</strong>{activity.notes && <span>{activity.notes}</span>}</td><td>{activity.owner}</td><td><span className={`ssa-status ssa-status-${activity.status}`}>{statusText[activity.status]}</span></td><td><span className={`ssa-priority ssa-priority-${activity.priority}`}><PiFlagDuotone aria-hidden="true" />{activity.priority}</span></td><td>{formatDate(activity.due_date)}</td></tr>
-              ))}</tbody></table></div>
+              <div className="ssa-table-wrap">
+                <table className={`ssa-table${compactRows ? " is-compact" : ""}`}>
+                  <caption className="sr-only">{activeCategoryData.label}</caption>
+                  <thead><tr>
+                    <th>SL</th><th>Task / activity name</th>
+                    {visibleColumns.start_date ? <th>Start date</th> : null}
+                    {visibleColumns.end_date ? <th>End date</th> : null}
+                    {visibleColumns.owner ? <th>Owner</th> : null}
+                    {visibleColumns.dependency ? <th>Dependency</th> : null}
+                    {visibleColumns.status ? <th>Status</th> : null}
+                    {visibleColumns.detail_status ? <th>Detail status</th> : null}
+                    {visibleColumns.notes ? <th>Notes / remark</th> : null}
+                  </tr></thead>
+                  <tbody>{visibleActivities.map((activity, index) => (
+                    <tr key={activity.id}>
+                      <td className="ssa-row-number">{String(index + 1).padStart(2, "0")}</td>
+                      <td className="ssa-task-cell"><strong>{activity.title}</strong></td>
+                      {visibleColumns.start_date ? <td>{formatDate(activity.start_date)}</td> : null}
+                      {visibleColumns.end_date ? <td>{formatDate(activity.end_date)}</td> : null}
+                      {visibleColumns.owner ? <td>{activity.owner}</td> : null}
+                      {visibleColumns.dependency ? <td>{activity.dependency || "—"}</td> : null}
+                      {visibleColumns.status ? <td><span className={`ssa-status ssa-status-${activity.status}`}>{statusText[activity.status]}</span></td> : null}
+                      {visibleColumns.detail_status ? <td>{activity.detail_status || "—"}</td> : null}
+                      {visibleColumns.notes ? <td>{activity.notes || "—"}</td> : null}
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
             )}
+
+            {!loading && !error ? (
+              <div className="ssa-table-footer"><span>{visibleActivities.length} of {categoryActivities.length} activities shown</span><span><PiSlidersHorizontalDuotone aria-hidden="true" />One column setup for all lists</span></div>
+            ) : null}
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
