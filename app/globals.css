@@ -2626,8 +2626,7 @@ strong { font-weight: 600; }
 
 /* ── FOOTER ── */
 footer {
-  background:
-    linear-gradient(180deg, rgba(247,251,255,.94), rgba(246,250,243,.98));
+  background: #fff;
   border-top: 1px solid var(--rule);
   padding: 4rem 0 2rem; position: relative;
 }
@@ -4948,6 +4947,26 @@ footer::before {
     #f8fbf5;
   background-size: 36px 36px;
 }
+.ssa-success-toast {
+  position: fixed;
+  top: 7.5rem;
+  left: 50%;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  max-width: calc(100% - 2rem);
+  padding: .78rem 1rem;
+  transform: translateX(-50%);
+  border: 1px solid var(--accent-bdr);
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 18px 40px -24px rgba(14,42,18,.52);
+  color: var(--forest);
+  font-size: .82rem;
+  font-weight: 600;
+}
+.ssa-success-toast svg { color: var(--accent); font-size: 1.2rem; }
 .ssa-wrap { width: min(calc(100% - 3rem), 1480px); margin-inline: auto; }
 
 .ssa-activity-page .ssa-hero {
@@ -4962,14 +4981,14 @@ footer::before {
   align-items: end;
 }
 .ssa-activity-page .ssa-hero-copy h1 {
-  max-width: 10ch;
+  max-width: none;
   margin: .55rem 0 .65rem;
   font-family: var(--fn-d);
-  font-size: clamp(3.2rem, 5.2vw, 5rem);
+  font-size: clamp(2.7rem, 4.2vw, 4.15rem);
   font-weight: 400;
   line-height: .86;
   letter-spacing: -.035em;
-  text-wrap: balance;
+  white-space: nowrap;
 }
 .ssa-activity-page .ssa-hero-copy p {
   max-width: 590px;
@@ -5352,7 +5371,7 @@ footer::before {
 @media (max-width: 620px) {
   .ssa-wrap { width: calc(100% - 2rem); }
   .ssa-activity-page .ssa-hero { padding: 2.2rem 0 1.9rem; }
-  .ssa-activity-page .ssa-hero-copy h1 { font-size: clamp(2.9rem, 14vw, 3.6rem); }
+  .ssa-activity-page .ssa-hero-copy h1 { font-size: clamp(2.9rem, 14vw, 3.6rem); white-space: normal; }
   .ssa-activity-page .ssa-summary { grid-template-columns: repeat(4, minmax(84px, 1fr)); overflow-x: auto; }
   .ssa-activity-page .ssa-summary div { flex-direction: column; align-items: flex-start; gap: .4rem; min-height: 104px; padding: .75rem; }
   .ssa-activity-page .ssa-summary div + div { padding-left: .75rem; }
@@ -5373,4 +5392,97 @@ footer::before {
   .ssa-settings-panel { right: 0; }
   .ssa-activity-page .ssa-table { min-width: 1240px; }
   .ssa-table-footer span:last-child { display: none; }
+}
+
+/* The activity form belongs above the work list so the table keeps its full width. */
+.ssa-activity-page .ssa-workspace-grid { grid-template-columns: minmax(0, 1fr); gap: 2.25rem; }
+.ssa-activity-page .ssa-entry-panel {
+  position: static;
+  max-width: none;
+  padding: 1.45rem;
+  scroll-margin-top: 190px;
+}
+.ssa-activity-page .ssa-entry-panel .ssa-form {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 1rem;
+  row-gap: .9rem;
+}
+.ssa-form-title { grid-column: span 4; }
+.ssa-form-owner { grid-column: span 2; }
+.ssa-form-category { grid-column: span 3; }
+.ssa-form-status { grid-column: span 3; }
+.ssa-form-dates { grid-column: span 3; }
+.ssa-form-dependency { grid-column: span 4; }
+.ssa-form-detail-status { grid-column: span 5; }
+.ssa-form-notes { grid-column: span 9; }
+.ssa-form-error,
+.ssa-form-success { grid-column: 1 / -1; }
+.ssa-form-actions { grid-column: span 3; display: flex; align-items: flex-end; justify-content: flex-end; gap: .55rem; }
+.ssa-activity-page .ssa-form-actions .ssa-save { width: auto; min-width: 138px; margin-top: 0; }
+.ssa-cancel-edit,
+.ssa-edit-button,
+.ssa-delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  border: 1px solid var(--accent-bdr);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--forest);
+  cursor: pointer;
+  font-family: var(--fn-b);
+  font-size: .74rem;
+  font-weight: 600;
+  transition: transform .16s ease, background .2s ease, border-color .2s ease;
+}
+.ssa-cancel-edit { padding: .7rem .9rem; }
+.ssa-cancel-edit:hover,
+.ssa-edit-button:hover { background: var(--accent-bg); }
+.ssa-cancel-edit:active,
+.ssa-edit-button:active,
+.ssa-delete-button:active { transform: translateY(1px); }
+.ssa-cancel-edit:disabled,
+.ssa-edit-button:disabled,
+.ssa-delete-button:disabled { cursor: wait; opacity: .6; }
+.ssa-actions-heading,
+.ssa-actions-cell { width: 154px; text-align: right; }
+.ssa-row-actions { display: flex; justify-content: flex-end; gap: .4rem; }
+.ssa-edit-button,
+.ssa-delete-button { padding: .42rem .55rem; white-space: nowrap; }
+.ssa-edit-button svg,
+.ssa-delete-button svg { font-size: .95rem; }
+.ssa-delete-button { border-color: rgba(163,59,38,.28); color: #943b29; }
+.ssa-delete-button:hover { background: #fbefeb; border-color: rgba(163,59,38,.42); }
+.ssa-activity-page .ssa-table { min-width: 1480px; }
+
+@media (max-width: 1080px) {
+  .ssa-activity-page .ssa-entry-panel .ssa-form { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .ssa-form-title { grid-column: span 3; }
+  .ssa-form-owner { grid-column: span 3; }
+  .ssa-form-category,
+  .ssa-form-status,
+  .ssa-form-dates { grid-column: span 2; }
+  .ssa-form-dependency,
+  .ssa-form-detail-status { grid-column: span 3; }
+  .ssa-form-notes { grid-column: span 4; }
+  .ssa-form-actions { grid-column: span 2; }
+}
+
+@media (max-width: 620px) {
+  .ssa-activity-page .ssa-entry-panel { margin-inline: -1rem; padding: 1.25rem 1rem; }
+  .ssa-activity-page .ssa-entry-panel .ssa-form { grid-template-columns: 1fr; }
+  .ssa-form-title,
+  .ssa-form-owner,
+  .ssa-form-category,
+  .ssa-form-status,
+  .ssa-form-dates,
+  .ssa-form-dependency,
+  .ssa-form-detail-status,
+  .ssa-form-notes,
+  .ssa-form-actions { grid-column: 1; }
+  .ssa-form-actions { justify-content: stretch; }
+  .ssa-activity-page .ssa-form-actions .ssa-save,
+  .ssa-cancel-edit { flex: 1; }
+  .ssa-activity-page .ssa-table { min-width: 1320px; }
 }
