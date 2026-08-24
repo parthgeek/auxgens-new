@@ -191,7 +191,8 @@ export default function SSAActivitySheet() {
     notes: true,
   });
   const formPanelRef = useRef<HTMLElement>(null);
-  const activityInputRef = useRef<HTMLInputElement>(null);
+  const activitySheetRef = useRef<HTMLDivElement>(null);
+  const activityInputRef = useRef<HTMLTextAreaElement>(null);
 
   const loadActivities = async () => {
     setLoading(true);
@@ -313,6 +314,11 @@ export default function SSAActivitySheet() {
     setSuccessMessage("");
   };
 
+  const filterFromSummary = (filter: StatusFilter) => {
+    setStatusFilter(filter);
+    activitySheetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const focusForm = () => {
     formPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.setTimeout(() => activityInputRef.current?.focus(), 350);
@@ -371,10 +377,18 @@ export default function SSAActivitySheet() {
             <p>Log the team&apos;s activity, record dependencies, and keep every task moving from plan to completion.</p>
           </div>
           <div className="ssa-summary" aria-label={`${activeCategoryData.label} summary`}>
-            <div><PiListChecksDuotone aria-hidden="true" /><span><strong>{categoryActivities.length}</strong>All work</span></div>
-            <div><PiCalendarBlankDuotone aria-hidden="true" /><span><strong>{counts.planned}</strong>Planned</span></div>
-            <div><PiClockDuotone aria-hidden="true" /><span><strong>{counts.in_progress}</strong>In progress</span></div>
-            <div><PiFlagDuotone aria-hidden="true" /><span><strong>{counts.done}</strong>Done</span></div>
+            <button type="button" className={statusFilter === "all" ? "is-active" : ""} aria-pressed={statusFilter === "all"} aria-controls="ssa-activity-list" onClick={() => filterFromSummary("all")}>
+              <PiListChecksDuotone aria-hidden="true" /><span><strong>{categoryActivities.length}</strong>All work</span>
+            </button>
+            <button type="button" className={statusFilter === "planned" ? "is-active" : ""} aria-pressed={statusFilter === "planned"} aria-controls="ssa-activity-list" onClick={() => filterFromSummary("planned")}>
+              <PiCalendarBlankDuotone aria-hidden="true" /><span><strong>{counts.planned}</strong>Planned</span>
+            </button>
+            <button type="button" className={statusFilter === "in_progress" ? "is-active" : ""} aria-pressed={statusFilter === "in_progress"} aria-controls="ssa-activity-list" onClick={() => filterFromSummary("in_progress")}>
+              <PiClockDuotone aria-hidden="true" /><span><strong>{counts.in_progress}</strong>In progress</span>
+            </button>
+            <button type="button" className={statusFilter === "done" ? "is-active" : ""} aria-pressed={statusFilter === "done"} aria-controls="ssa-activity-list" onClick={() => filterFromSummary("done")}>
+              <PiFlagDuotone aria-hidden="true" /><span><strong>{counts.done}</strong>Done</span>
+            </button>
           </div>
         </div>
       </section>
@@ -412,21 +426,22 @@ export default function SSAActivitySheet() {
 
             <form className="ssa-form" onSubmit={submitActivity} noValidate>
               <label className="ssa-form-title">
-                Task / activity <span aria-hidden="true">*</span>
-                <input
+                <span className="ssa-field-label">Task / activity <span aria-hidden="true">*</span></span>
+                <textarea
                   ref={activityInputRef}
                   value={form.title}
                   onChange={(event) => updateForm("title", event.target.value)}
                   onBlur={() => setFormErrors((current) => ({ ...current, title: validateField("title", form.title, form) }))}
                   aria-invalid={Boolean(formErrors.title)}
                   maxLength={180}
+                  rows={2}
                   placeholder={activeCategoryData.placeholder}
                 />
                 <FieldError message={formErrors.title} />
               </label>
 
               <label className="ssa-form-owner">
-                Owner <span aria-hidden="true">*</span>
+                <span className="ssa-field-label">Owner <span aria-hidden="true">*</span></span>
                 <input
                   value={form.owner}
                   onChange={(event) => updateForm("owner", event.target.value)}
@@ -439,7 +454,7 @@ export default function SSAActivitySheet() {
               </label>
 
               <label className="ssa-form-category">
-                Category
+                <span className="ssa-field-label">Category</span>
                 <span className="ssa-select-wrap">
                   <select value={form.category} onChange={(event) => updateForm("category", event.target.value as ActivityCategory)}>
                     {categories.map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}
@@ -449,7 +464,7 @@ export default function SSAActivitySheet() {
               </label>
 
               <label className="ssa-form-status">
-                Status
+                <span className="ssa-field-label">Status</span>
                 <span className="ssa-select-wrap">
                   <select value={form.status} onChange={(event) => updateForm("status", event.target.value as ActivityStatus)}>
                     {Object.entries(statusText).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -460,7 +475,7 @@ export default function SSAActivitySheet() {
 
               <div className="ssa-form-two-column ssa-form-dates">
                 <label>
-                  Start date <span aria-hidden="true">*</span>
+                  <span className="ssa-field-label">Start date <span aria-hidden="true">*</span></span>
                   <input
                     type="date"
                     value={form.start_date}
@@ -471,7 +486,7 @@ export default function SSAActivitySheet() {
                   <FieldError message={formErrors.start_date} />
                 </label>
                 <label>
-                  End date <span aria-hidden="true">*</span>
+                  <span className="ssa-field-label">End date <span aria-hidden="true">*</span></span>
                   <input
                     type="date"
                     min={form.start_date || undefined}
@@ -485,17 +500,17 @@ export default function SSAActivitySheet() {
               </div>
 
               <label className="ssa-form-dependency">
-                Dependency <span className="ssa-optional">optional</span>
+                <span className="ssa-field-label">Dependency <span className="ssa-optional">optional</span></span>
                 <input value={form.dependency} onChange={(event) => updateForm("dependency", event.target.value)} maxLength={300} placeholder="What must happen first?" />
               </label>
 
               <label className="ssa-form-detail-status">
-                Detail status <span className="ssa-optional">optional</span>
-                <input value={form.detail_status} onChange={(event) => updateForm("detail_status", event.target.value)} maxLength={400} placeholder="e.g. Design review in progress" />
+                <span className="ssa-field-label">Detail status <span className="ssa-optional">optional</span></span>
+                <textarea value={form.detail_status} onChange={(event) => updateForm("detail_status", event.target.value)} maxLength={400} rows={3} placeholder="e.g. Design review in progress" />
               </label>
 
               <label className="ssa-form-notes">
-                Notes / remark <span className="ssa-optional">optional</span>
+                <span className="ssa-field-label">Notes / remark <span className="ssa-optional">optional</span></span>
                 <textarea value={form.notes} onChange={(event) => updateForm("notes", event.target.value)} maxLength={2000} rows={3} placeholder="Add a useful hand-off note" />
               </label>
 
@@ -510,7 +525,7 @@ export default function SSAActivitySheet() {
             </form>
           </section>
 
-          <div className="ssa-sheet">
+          <div id="ssa-activity-list" ref={activitySheetRef} className="ssa-sheet">
             <div className="ssa-sheet-header">
               <div><p className="eyebrow">Live activity sheet</p><h2>{activeCategoryData.shortLabel} workboard</h2><p>{activeCategoryData.description}.</p></div>
               <button className="ssa-add-shortcut" type="button" onClick={() => { cancelEditing(); focusForm(); }}><PiPlusDuotone aria-hidden="true" />Add activity</button>
@@ -596,7 +611,7 @@ export default function SSAActivitySheet() {
                       {visibleColumns.owner ? <td>{activity.owner}</td> : null}
                       {visibleColumns.dependency ? <td>{activity.dependency || "—"}</td> : null}
                       {visibleColumns.status ? <td><span className={`ssa-status ssa-status-${activity.status}`}>{statusText[activity.status]}</span></td> : null}
-                      {visibleColumns.detail_status ? <td>{activity.detail_status || "—"}</td> : null}
+                      {visibleColumns.detail_status ? <td className="ssa-multiline-cell">{activity.detail_status || "—"}</td> : null}
                       {visibleColumns.notes ? <td>{activity.notes || "—"}</td> : null}
                       <td className="ssa-actions-cell">
                         <div className="ssa-row-actions">
