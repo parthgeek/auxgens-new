@@ -8,6 +8,7 @@ import About from "./components/About";
 import CTA from "./components/CTA";
 import Footer from "./components/Footer";
 import ScrollFade from "./components/ScrollFade";
+import TimedVideoOverlay from "./components/TimedVideoOverlay";
 
 export default function Page() {
   return (
@@ -22,6 +23,7 @@ export default function Page() {
       <CTA />
       <Footer />
       <ScrollFade />
+      <TimedVideoOverlay />
     </>
   );
 }
