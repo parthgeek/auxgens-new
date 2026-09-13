@@ -362,6 +362,7 @@ export async function DELETE(request: Request) {
         due_date: fallbackDate,
         notes: encodeMetadata(tombstoneActivity, id, true),
       }),
+      
     });
     const [tombstone] = (await response.json()) as StoredActivity[];
     if (!tombstone) throw new Error("Deletion marker was not returned");
