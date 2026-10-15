@@ -365,6 +365,7 @@ export async function DELETE(request: Request) {
       notes: current.notes,
     };
 
+    
     const response = await supabaseRequest(config, "ssa_activities", {
       method: "POST",
       headers: { Prefer: "return=representation" },
