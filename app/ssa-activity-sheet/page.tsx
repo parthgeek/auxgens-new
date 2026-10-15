@@ -6,9 +6,9 @@ import ScrollFade from "../components/ScrollFade";
 import SSAActivitySheet from "./SSAActivitySheet";
 
 export const metadata: Metadata = {
-  title: "SSA Activity Sheet | Auxgens",
+  title: "SSA & JSSA Activity Sheet | Auxgens",
   description:
-    "A shared workboard for the Auxgens team to record and follow Sri Sri Academy activity.",
+    "Shared SSA and JSSA workboards for the Auxgens team to record and follow activities.",
 };
 
 export default function SSAActivitySheetPage() {

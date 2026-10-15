@@ -1,21 +1,25 @@
 import { NextResponse } from "next/server";
+import { activityDate } from "../../ssa-activity-sheet/activityDates";
 
 export const runtime = "nodejs";
 
 const statuses = ["planned", "in_progress", "blocked", "done"] as const;
 const categories = ["marketing", "website", "admissions_events"] as const;
+const groups = ["ssa", "jssa"] as const;
 const metadataPrefix = "__SSA_ACTIVITY_V2__";
 
 type ActivityStatus = (typeof statuses)[number];
 type ActivityCategory = (typeof categories)[number];
+type ActivityGroup = (typeof groups)[number];
 
 type ActivityInput = {
+  group: ActivityGroup;
   title: string;
   owner: string;
   category: ActivityCategory;
   status: ActivityStatus;
   start_date: string;
-  end_date: string;
+  end_date: string | null;
   dependency: string;
   detail_status: string;
   notes: string;
@@ -34,9 +38,10 @@ type StoredActivity = {
 
 type ActivityMetadata = {
   version: 2;
+  group?: ActivityGroup;
   category: ActivityCategory;
   start_date: string;
-  end_date: string;
+  end_date: string | null;
   dependency: string;
   detail_status: string;
   notes: string;
@@ -52,25 +57,25 @@ function readDate(value: unknown) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
 }
 
-function parseActivity(value: unknown): ActivityInput | null {
+function parseActivity(value: unknown, startDate = activityDate()): ActivityInput | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
 
   const body = value as Record<string, unknown>;
   const title = readText(body.title, 180);
   const owner = readText(body.owner, 100);
+  const group = body.group ?? "ssa";
   const category = body.category;
   const status = body.status;
-  const startDate = readDate(body.start_date);
   const endDate = readDate(body.end_date);
 
   if (
     !title ||
     !owner ||
+    !groups.includes(group as ActivityGroup) ||
     !categories.includes(category as ActivityCategory) ||
     !statuses.includes(status as ActivityStatus) ||
-    !startDate ||
-    !endDate ||
-    endDate < startDate
+    (body.end_date != null && body.end_date !== "" && !endDate) ||
+    (endDate && endDate < startDate)
   ) {
     return null;
   }
@@ -78,10 +83,11 @@ function parseActivity(value: unknown): ActivityInput | null {
   return {
     title,
     owner,
+    group: group as ActivityGroup,
     category: category as ActivityCategory,
     status: status as ActivityStatus,
     start_date: startDate,
-    end_date: endDate,
+    end_date: endDate || null,
     dependency: readText(body.dependency, 300),
     detail_status: readText(body.detail_status, 400),
     notes: readText(body.notes, 2000),
@@ -91,6 +97,7 @@ function parseActivity(value: unknown): ActivityInput | null {
 function encodeMetadata(activity: ActivityInput, replacesId?: string | null, deleted = false) {
   const metadata: ActivityMetadata = {
     version: 2,
+    group: activity.group,
     category: activity.category,
     start_date: activity.start_date,
     end_date: activity.end_date,
@@ -108,9 +115,10 @@ function decodeActivity(activity: StoredActivity) {
     id: activity.id,
     title: activity.title,
     owner: activity.owner,
+    group: "ssa" as ActivityGroup,
     category: "website" as ActivityCategory,
     status: activity.status,
-    start_date: null as string | null,
+    start_date: activityDate(new Date(activity.created_at)),
     end_date: activity.due_date,
     dependency: "",
     detail_status: "",
@@ -128,8 +136,9 @@ function decodeActivity(activity: StoredActivity) {
 
     return {
       ...legacy,
+      group: groups.includes(metadata.group as ActivityGroup) ? metadata.group as ActivityGroup : "ssa" as ActivityGroup,
       category: metadata.category as ActivityCategory,
-      start_date: readDate(metadata.start_date) || null,
+      start_date: readDate(metadata.start_date) || legacy.start_date,
       end_date: readDate(metadata.end_date) || activity.due_date,
       dependency: readText(metadata.dependency, 300),
       detail_status: readText(metadata.detail_status, 400),
@@ -220,7 +229,7 @@ export async function POST(request: Request) {
 
   if (!activity) {
     return NextResponse.json(
-      { error: "Add an activity, owner, start date, end date, and status before saving." },
+      { error: "Add an activity, owner, category, and status. If provided, the end date must be on or after the start date." },
       { status: 400 },
     );
   }
@@ -259,13 +268,7 @@ export async function PATCH(request: Request) {
   }
 
   const id = readText(body.id, 200);
-  const activity = parseActivity(body);
-  if (!id || !activity) {
-    return NextResponse.json(
-      { error: "Add an activity, owner, start date, end date, and status before saving." },
-      { status: 400 },
-    );
-  }
+  if (!id) return NextResponse.json({ error: "The activity could not be identified." }, { status: 400 });
 
   try {
     const currentResponse = await supabaseRequest(
@@ -276,6 +279,17 @@ export async function PATCH(request: Request) {
     const [currentStored] = (await currentResponse.json()) as StoredActivity[];
     if (!currentStored) return NextResponse.json({ error: "This activity no longer exists." }, { status: 404 });
     const currentActivity = decodeActivity(currentStored);
+    const activity = parseActivity(body, currentActivity.start_date);
+    if (!activity) {
+      return NextResponse.json(
+        { error: "Add an activity, owner, category, and status. If provided, the end date must be on or after the start date." },
+        { status: 400 },
+      );
+    }
+    // Preserve historical details that are no longer part of the form.
+    if (body.end_date === undefined) activity.end_date = currentActivity.end_date;
+    activity.dependency = currentActivity.dependency;
+    activity.detail_status = currentActivity.detail_status;
 
     const response = await supabaseRequest(config, `ssa_activities?id=eq.${encodeURIComponent(id)}`, {
       method: "PATCH",
@@ -338,14 +352,14 @@ export async function DELETE(request: Request) {
     if (!currentStored) return NextResponse.json({ error: "This activity no longer exists." }, { status: 404 });
 
     const current = decodeActivity(currentStored);
-    const fallbackDate = current.end_date ?? currentStored.due_date ?? currentStored.created_at.slice(0, 10);
     const tombstoneActivity: ActivityInput = {
+      group: current.group,
       title: current.title,
       owner: current.owner,
       category: current.category,
       status: current.status,
-      start_date: current.start_date ?? fallbackDate,
-      end_date: fallbackDate,
+      start_date: current.start_date,
+      end_date: current.end_date,
       dependency: current.dependency,
       detail_status: current.detail_status,
       notes: current.notes,
@@ -359,7 +373,7 @@ export async function DELETE(request: Request) {
         owner: currentStored.owner,
         status: currentStored.status,
         priority: currentStored.priority ?? "medium",
-        due_date: fallbackDate,
+        due_date: current.end_date,
         notes: encodeMetadata(tombstoneActivity, id, true),
       }),
       

@@ -5057,6 +5057,27 @@ footer::before {
   font-variant-numeric: tabular-nums;
 }
 
+.ssa-group-nav {
+  border-bottom: 1px solid var(--rule);
+  background: rgba(248,251,245,.92);
+}
+.ssa-group-tabs { display: flex; gap: clamp(1rem, 4vw, 3rem); }
+.ssa-group-tabs button {
+  padding: 1.1rem .25rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--t4);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease;
+}
+.ssa-group-tabs button:hover { color: var(--forest); }
+.ssa-group-tabs button.is-active { border-bottom-color: var(--accent); color: var(--forest); }
+.ssa-group-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.ssa-group-tabs button:disabled { cursor: wait; opacity: .65; }
+
 .ssa-category-nav {
   position: sticky;
   top: 104px;
@@ -5149,6 +5170,10 @@ footer::before {
 .ssa-activity-page .ssa-form { display: grid; gap: .85rem; margin-top: 1.2rem; }
 .ssa-activity-page .ssa-form label {
   display: grid;
+  grid-template-rows: 1.2rem 3rem;
+  grid-auto-rows: auto;
+  align-content: start;
+  align-self: start;
   gap: .35rem;
   min-width: 0;
   color: var(--t2);
@@ -5182,8 +5207,15 @@ footer::before {
   padding: .63rem .7rem;
   transition: border-color .2s ease, box-shadow .2s ease;
 }
-.ssa-activity-page .ssa-form textarea { resize: vertical; line-height: 1.45; }
-.ssa-activity-page .ssa-form-title textarea { min-height: 4.35rem; }
+.ssa-activity-page .ssa-form input,
+.ssa-activity-page .ssa-form select,
+.ssa-activity-page .ssa-form textarea {
+  height: 3rem;
+  min-height: 3rem;
+  padding-block: .8rem;
+  line-height: 1.4;
+}
+.ssa-activity-page .ssa-form textarea { resize: none; }
 .ssa-activity-page .ssa-form input:focus,
 .ssa-activity-page .ssa-form select:focus,
 .ssa-activity-page .ssa-form textarea:focus,
@@ -5428,18 +5460,16 @@ footer::before {
   column-gap: 1rem;
   row-gap: .9rem;
 }
-.ssa-form-title { grid-column: span 4; }
+.ssa-form-title { grid-column: span 5; }
 .ssa-form-owner { grid-column: span 2; }
 .ssa-form-category { grid-column: span 3; }
-.ssa-form-status { grid-column: span 3; }
-.ssa-form-dates { grid-column: span 3; }
-.ssa-form-dependency { grid-column: span 4; }
-.ssa-form-detail-status { grid-column: span 5; }
+.ssa-form-status { grid-column: span 2; }
 .ssa-form-notes { grid-column: span 9; }
 .ssa-form-error,
 .ssa-form-success { grid-column: 1 / -1; }
-.ssa-form-actions { grid-column: span 3; display: flex; align-items: flex-end; justify-content: flex-end; gap: .55rem; }
+.ssa-form-actions { grid-column: span 3; display: flex; align-items: flex-end; align-self: end; justify-content: flex-end; gap: .55rem; }
 .ssa-activity-page .ssa-form-actions .ssa-save { width: auto; min-width: 138px; margin-top: 0; }
+.ssa-activity-page .ssa-form-actions button { height: 3rem; }
 .ssa-cancel-edit,
 .ssa-edit-button,
 .ssa-delete-button {
@@ -5475,17 +5505,14 @@ footer::before {
 .ssa-delete-button svg { font-size: .95rem; }
 .ssa-delete-button { border-color: rgba(163,59,38,.28); color: #943b29; }
 .ssa-delete-button:hover { background: #fbefeb; border-color: rgba(163,59,38,.42); }
-.ssa-activity-page .ssa-table { min-width: 1480px; }
+.ssa-activity-page .ssa-table { min-width: 1080px; }
 
 @media (max-width: 1080px) {
   .ssa-activity-page .ssa-entry-panel .ssa-form { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .ssa-form-title { grid-column: span 3; }
   .ssa-form-owner { grid-column: span 3; }
   .ssa-form-category,
-  .ssa-form-status,
-  .ssa-form-dates { grid-column: span 2; }
-  .ssa-form-dependency,
-  .ssa-form-detail-status { grid-column: span 3; }
+  .ssa-form-status { grid-column: span 3; }
   .ssa-form-notes { grid-column: span 4; }
   .ssa-form-actions { grid-column: span 2; }
 }
@@ -5497,13 +5524,10 @@ footer::before {
   .ssa-form-owner,
   .ssa-form-category,
   .ssa-form-status,
-  .ssa-form-dates,
-  .ssa-form-dependency,
-  .ssa-form-detail-status,
   .ssa-form-notes,
   .ssa-form-actions { grid-column: 1; }
   .ssa-form-actions { justify-content: stretch; }
   .ssa-activity-page .ssa-form-actions .ssa-save,
   .ssa-cancel-edit { flex: 1; }
-  .ssa-activity-page .ssa-table { min-width: 1320px; }
+  .ssa-activity-page .ssa-table { min-width: 1080px; }
 }

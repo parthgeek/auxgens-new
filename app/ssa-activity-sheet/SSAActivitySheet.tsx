@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   PiArrowClockwiseDuotone,
   PiCalendarBlankDuotone,
@@ -22,36 +22,37 @@ import {
 
 type ActivityStatus = "planned" | "in_progress" | "blocked" | "done";
 type ActivityCategory = "marketing" | "website" | "admissions_events";
+type ActivityGroup = "ssa" | "jssa";
 type StatusFilter = "all" | ActivityStatus;
 
 type Activity = {
+  group: ActivityGroup;
   id: string;
   title: string;
   owner: string;
   category: ActivityCategory;
   status: ActivityStatus;
   start_date: string | null;
-  end_date: string | null;
-  dependency: string;
-  detail_status: string;
   notes: string;
   created_at: string;
 };
 
 type ActivityForm = {
+  group: ActivityGroup;
   title: string;
   owner: string;
   category: ActivityCategory;
   status: ActivityStatus;
-  start_date: string;
-  end_date: string;
-  dependency: string;
-  detail_status: string;
   notes: string;
 };
 
 type FormErrors = Partial<Record<keyof ActivityForm, string>>;
-type OptionalColumn = "start_date" | "end_date" | "owner" | "dependency" | "status" | "detail_status" | "notes";
+type OptionalColumn = "start_date" | "owner" | "status" | "notes";
+
+const activityGroups: Array<{ id: ActivityGroup; label: string }> = [
+  { id: "ssa", label: "SSA Activity" },
+  { id: "jssa", label: "JSSA Activity" },
+];
 
 const categories: Array<{
   id: ActivityCategory;
@@ -94,38 +95,29 @@ const statusFilters: StatusFilter[] = ["all", "planned", "in_progress", "blocked
 
 const optionalColumns: Array<{ id: OptionalColumn; label: string }> = [
   { id: "start_date", label: "Start date" },
-  { id: "end_date", label: "End date" },
   { id: "owner", label: "Owner" },
-  { id: "dependency", label: "Dependency" },
   { id: "status", label: "Status" },
-  { id: "detail_status", label: "Detail status" },
   { id: "notes", label: "Notes / remark" },
 ];
 
-function createInitialForm(category: ActivityCategory): ActivityForm {
+function createInitialForm(category: ActivityCategory, group: ActivityGroup): ActivityForm {
   return {
+    group,
     title: "",
     owner: "",
     category,
     status: "planned",
-    start_date: "",
-    end_date: "",
-    dependency: "",
-    detail_status: "",
     notes: "",
   };
 }
 
 function formFromActivity(activity: Activity): ActivityForm {
   return {
+    group: activity.group,
     title: activity.title,
     owner: activity.owner,
     category: activity.category,
     status: activity.status,
-    start_date: activity.start_date ?? "",
-    end_date: activity.end_date ?? "",
-    dependency: activity.dependency,
-    detail_status: activity.detail_status,
     notes: activity.notes,
   };
 }
@@ -139,19 +131,26 @@ function formatDate(value: string | null) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
-function validateField(field: keyof ActivityForm, value: string, form: ActivityForm) {
+function validateField(field: keyof ActivityForm, value: string) {
   if (field === "title" && !value.trim()) return "Add a task or activity.";
   if (field === "owner" && !value.trim()) return "Add the person responsible.";
-  if (field === "start_date" && !value) return "Select a start date.";
-  if (field === "end_date") {
-    if (!value) return "Select an end date.";
-    if (form.start_date && value < form.start_date) return "End date must be after the start date.";
-  }
   return undefined;
 }
 
 function FieldError({ message }: { message?: string }) {
   return message ? <span className="ssa-field-error">{message}</span> : null;
+}
+
+function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabs = Array.from(event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)') ?? []);
+  if (!tabs.length) return;
+  event.preventDefault();
+  const index = tabs.indexOf(event.currentTarget);
+  const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1
+    : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  tabs[nextIndex].focus();
+  tabs[nextIndex].click();
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit, timeout = 12_000) {
@@ -166,9 +165,10 @@ async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit, ti
 }
 
 export default function SSAActivitySheet() {
+  const [activeGroup, setActiveGroup] = useState<ActivityGroup>("ssa");
   const [activeCategory, setActiveCategory] = useState<ActivityCategory>("website");
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [form, setForm] = useState<ActivityForm>(() => createInitialForm("website"));
+  const [form, setForm] = useState<ActivityForm>(() => createInitialForm("website", "ssa"));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(true);
@@ -183,11 +183,8 @@ export default function SSAActivitySheet() {
   const [compactRows, setCompactRows] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<Record<OptionalColumn, boolean>>({
     start_date: true,
-    end_date: true,
     owner: true,
-    dependency: true,
     status: true,
-    detail_status: true,
     notes: true,
   });
   const formPanelRef = useRef<HTMLElement>(null);
@@ -222,9 +219,10 @@ export default function SSAActivitySheet() {
   }, [successMessage]);
 
   const activeCategoryData = categories.find((category) => category.id === activeCategory) ?? categories[1];
+  const activeGroupLabel = activityGroups.find((group) => group.id === activeGroup)!.label;
   const categoryActivities = useMemo(
-    () => activities.filter((activity) => activity.category === activeCategory),
-    [activeCategory, activities],
+    () => activities.filter((activity) => activity.group === activeGroup && activity.category === activeCategory),
+    [activeGroup, activeCategory, activities],
   );
   const counts = useMemo(
     () => categoryActivities.reduce(
@@ -240,8 +238,6 @@ export default function SSAActivitySheet() {
       const matchesSearch = !normalizedQuery || [
         activity.title,
         activity.owner,
-        activity.dependency,
-        activity.detail_status,
         activity.notes,
       ].join(" ").toLowerCase().includes(normalizedQuery);
       return matchesStatus && matchesSearch;
@@ -249,14 +245,10 @@ export default function SSAActivitySheet() {
   }, [categoryActivities, searchQuery, statusFilter]);
 
   const updateForm = <K extends keyof ActivityForm>(field: K, value: ActivityForm[K]) => {
-    const nextForm = { ...form, [field]: value };
-    setForm(nextForm);
+    setForm({ ...form, [field]: value });
     setFormErrors((current) => ({
       ...current,
-      [field]: validateField(field, String(value), nextForm),
-      ...(field === "start_date" && nextForm.end_date
-        ? { end_date: validateField("end_date", nextForm.end_date, nextForm) }
-        : {}),
+      [field]: validateField(field, String(value)),
     }));
     setFormError("");
     setSuccessMessage("");
@@ -265,7 +257,7 @@ export default function SSAActivitySheet() {
   const validateForm = () => {
     const nextErrors: FormErrors = {};
     (Object.keys(form) as Array<keyof ActivityForm>).forEach((field) => {
-      const fieldError = validateField(field, String(form[field]), form);
+      const fieldError = validateField(field, String(form[field]));
       if (fieldError) nextErrors[field] = fieldError;
     });
     setFormErrors(nextErrors);
@@ -293,7 +285,8 @@ export default function SSAActivitySheet() {
         ? current.map((activity) => activity.id === previousEditingId ? result.activity : activity)
         : [result.activity, ...current]);
       setActiveCategory(result.activity.category);
-      setForm(createInitialForm(result.activity.category));
+      setActiveGroup(result.activity.group);
+      setForm(createInitialForm(result.activity.category, result.activity.group));
       setEditingId(null);
       setFormErrors({});
       setStatusFilter("all");
@@ -314,6 +307,19 @@ export default function SSAActivitySheet() {
     setSuccessMessage("");
   };
 
+  const chooseGroup = (group: ActivityGroup) => {
+    if (group === activeGroup || saving) return;
+    setActiveGroup(group);
+    setEditingId(null);
+    setForm(createInitialForm(activeCategory, group));
+    setFormErrors({});
+    setFormError("");
+    setStatusFilter("all");
+    setSearchQuery("");
+    setSuccessMessage("");
+    setSettingsOpen(false);
+  };
+
   const filterFromSummary = (filter: StatusFilter) => {
     setStatusFilter(filter);
     activitySheetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -331,13 +337,14 @@ export default function SSAActivitySheet() {
     setFormError("");
     setSuccessMessage("");
     setActiveCategory(activity.category);
+    setActiveGroup(activity.group);
     formPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.setTimeout(() => activityInputRef.current?.focus(), 350);
   };
 
   const cancelEditing = () => {
     setEditingId(null);
-    setForm(createInitialForm(activeCategory));
+    setForm(createInitialForm(activeCategory, activeGroup));
     setFormErrors({});
     setFormError("");
   };
@@ -371,10 +378,10 @@ export default function SSAActivitySheet() {
       <section className="ssa-hero">
         <div className="ssa-wrap ssa-hero-grid">
           <div className="ssa-hero-copy">
-            <span className="eyebrow">SSA team workboard</span>
+            <span className="eyebrow">{activeGroup.toUpperCase()} team workboard</span>
             <h1>Team activity desk</h1>
             <p className="ssa-hero-lead">Plan clearly. Move work forward.</p>
-            <p>Log the team&apos;s activity, record dependencies, and keep every task moving from plan to completion.</p>
+            <p>Log the team&apos;s activity, assign an owner, and keep every task moving from plan to completion.</p>
           </div>
           <div className="ssa-summary" aria-label={`${activeCategoryData.label} summary`}>
             <button type="button" className={statusFilter === "all" ? "is-active" : ""} aria-pressed={statusFilter === "all"} aria-controls="ssa-activity-list" onClick={() => filterFromSummary("all")}>
@@ -393,19 +400,45 @@ export default function SSAActivitySheet() {
         </div>
       </section>
 
-      <nav className="ssa-category-nav" aria-label="Activity categories">
-        <div className="ssa-wrap ssa-category-tabs" role="tablist">
+      <nav className="ssa-group-nav" aria-label="Activity sheets">
+        <div className="ssa-wrap ssa-group-tabs" role="tablist" aria-label="Activity sheets">
+          {activityGroups.map((group) => (
+            <button
+              key={group.id}
+              id={`ssa-group-tab-${group.id}`}
+              type="button"
+              role="tab"
+              aria-selected={group.id === activeGroup}
+              aria-controls="ssa-group-panel"
+              tabIndex={group.id === activeGroup ? 0 : -1}
+              className={group.id === activeGroup ? "is-active" : ""}
+              disabled={saving}
+              onClick={() => chooseGroup(group.id)}
+              onKeyDown={handleTabKeyDown}
+            >
+              {group.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <div id="ssa-group-panel" role="tabpanel" aria-labelledby={`ssa-group-tab-${activeGroup}`}>
+      <nav className="ssa-category-nav" aria-label={`${activeGroupLabel} categories`}>
+        <div className="ssa-wrap ssa-category-tabs" role="tablist" aria-label={`${activeGroupLabel} categories`}>
           {categories.map((category) => {
             const isActive = category.id === activeCategory;
             return (
               <button
                 key={category.id}
+                id={`ssa-category-tab-${category.id}`}
                 type="button"
                 role="tab"
                 aria-selected={isActive}
                 aria-controls="ssa-workboard-panel"
+                tabIndex={isActive ? 0 : -1}
                 className={isActive ? "is-active" : ""}
                 onClick={() => chooseCategory(category.id)}
+                onKeyDown={handleTabKeyDown}
               >
                 <strong><span className="ssa-tab-full">{category.label}</span><span className="ssa-tab-short">{category.shortLabel}</span></strong>
                 <span>{category.description}</span>
@@ -415,14 +448,14 @@ export default function SSAActivitySheet() {
         </div>
       </nav>
 
-      <section id="ssa-workboard-panel" role="tabpanel" className="ssa-workspace">
+      <section id="ssa-workboard-panel" role="tabpanel" aria-labelledby={`ssa-category-tab-${activeCategory}`} className="ssa-workspace">
         <div className="ssa-wrap ssa-workspace-grid">
           <section ref={formPanelRef} className="ssa-entry-panel" aria-labelledby="ssa-entry-title">
             <div className="ssa-panel-heading">
               <div><p className="eyebrow">{editingId ? "Editing activity" : "New update"}</p><h2 id="ssa-entry-title">{editingId ? "Edit activity" : "Add activity"}</h2></div>
               <span className="ssa-panel-icon">{editingId ? <PiPencilSimpleDuotone aria-hidden="true" /> : <PiPlusDuotone aria-hidden="true" />}</span>
             </div>
-            <p className="ssa-form-context">{editingId ? "Change any detail below, then save your update." : <>Adding to <strong>{activeCategoryData.label}</strong></>}</p>
+            <p className="ssa-form-context">{editingId ? "Change any detail below, then save your update." : <>Adding to <strong>{activeGroupLabel} / {activeCategoryData.label}</strong></>}</p>
 
             <form className="ssa-form" onSubmit={submitActivity} noValidate>
               <label className="ssa-form-title">
@@ -431,10 +464,10 @@ export default function SSAActivitySheet() {
                   ref={activityInputRef}
                   value={form.title}
                   onChange={(event) => updateForm("title", event.target.value)}
-                  onBlur={() => setFormErrors((current) => ({ ...current, title: validateField("title", form.title, form) }))}
+                  onBlur={() => setFormErrors((current) => ({ ...current, title: validateField("title", form.title) }))}
                   aria-invalid={Boolean(formErrors.title)}
                   maxLength={180}
-                  rows={2}
+                  rows={1}
                   placeholder={activeCategoryData.placeholder}
                 />
                 <FieldError message={formErrors.title} />
@@ -445,7 +478,7 @@ export default function SSAActivitySheet() {
                 <input
                   value={form.owner}
                   onChange={(event) => updateForm("owner", event.target.value)}
-                  onBlur={() => setFormErrors((current) => ({ ...current, owner: validateField("owner", form.owner, form) }))}
+                  onBlur={() => setFormErrors((current) => ({ ...current, owner: validateField("owner", form.owner) }))}
                   aria-invalid={Boolean(formErrors.owner)}
                   maxLength={100}
                   placeholder="Team member responsible"
@@ -473,45 +506,9 @@ export default function SSAActivitySheet() {
                 </span>
               </label>
 
-              <div className="ssa-form-two-column ssa-form-dates">
-                <label>
-                  <span className="ssa-field-label">Start date <span aria-hidden="true">*</span></span>
-                  <input
-                    type="date"
-                    value={form.start_date}
-                    onChange={(event) => updateForm("start_date", event.target.value)}
-                    onBlur={() => setFormErrors((current) => ({ ...current, start_date: validateField("start_date", form.start_date, form) }))}
-                    aria-invalid={Boolean(formErrors.start_date)}
-                  />
-                  <FieldError message={formErrors.start_date} />
-                </label>
-                <label>
-                  <span className="ssa-field-label">End date <span aria-hidden="true">*</span></span>
-                  <input
-                    type="date"
-                    min={form.start_date || undefined}
-                    value={form.end_date}
-                    onChange={(event) => updateForm("end_date", event.target.value)}
-                    onBlur={() => setFormErrors((current) => ({ ...current, end_date: validateField("end_date", form.end_date, form) }))}
-                    aria-invalid={Boolean(formErrors.end_date)}
-                  />
-                  <FieldError message={formErrors.end_date} />
-                </label>
-              </div>
-
-              <label className="ssa-form-dependency">
-                <span className="ssa-field-label">Dependency <span className="ssa-optional">optional</span></span>
-                <input value={form.dependency} onChange={(event) => updateForm("dependency", event.target.value)} maxLength={300} placeholder="What must happen first?" />
-              </label>
-
-              <label className="ssa-form-detail-status">
-                <span className="ssa-field-label">Detail status <span className="ssa-optional">optional</span></span>
-                <textarea value={form.detail_status} onChange={(event) => updateForm("detail_status", event.target.value)} maxLength={400} rows={3} placeholder="e.g. Design review in progress" />
-              </label>
-
               <label className="ssa-form-notes">
                 <span className="ssa-field-label">Notes / remark <span className="ssa-optional">optional</span></span>
-                <textarea value={form.notes} onChange={(event) => updateForm("notes", event.target.value)} maxLength={2000} rows={3} placeholder="Add a useful hand-off note" />
+                <textarea value={form.notes} onChange={(event) => updateForm("notes", event.target.value)} maxLength={2000} rows={1} placeholder="Add a useful hand-off note" />
               </label>
 
               {formError ? <p className="ssa-form-error" role="alert"><PiWarningCircleDuotone aria-hidden="true" />{formError}</p> : null}
@@ -527,7 +524,7 @@ export default function SSAActivitySheet() {
 
           <div id="ssa-activity-list" ref={activitySheetRef} className="ssa-sheet">
             <div className="ssa-sheet-header">
-              <div><p className="eyebrow">Live activity sheet</p><h2>{activeCategoryData.shortLabel} workboard</h2><p>{activeCategoryData.description}.</p></div>
+              <div><p className="eyebrow">{activeGroupLabel} sheet</p><h2>{activeCategoryData.shortLabel} workboard</h2><p>{activeCategoryData.description}.</p></div>
               <button className="ssa-add-shortcut" type="button" onClick={() => { cancelEditing(); focusForm(); }}><PiPlusDuotone aria-hidden="true" />Add activity</button>
             </div>
 
@@ -590,15 +587,12 @@ export default function SSAActivitySheet() {
             ) : (
               <div className="ssa-table-wrap">
                 <table className={`ssa-table${compactRows ? " is-compact" : ""}`}>
-                  <caption className="sr-only">{activeCategoryData.label}</caption>
+                  <caption className="sr-only">{activeGroupLabel} / {activeCategoryData.label}</caption>
                   <thead><tr>
                     <th>SL</th><th>Task / activity name</th>
                     {visibleColumns.start_date ? <th>Start date</th> : null}
-                    {visibleColumns.end_date ? <th>End date</th> : null}
                     {visibleColumns.owner ? <th>Owner</th> : null}
-                    {visibleColumns.dependency ? <th>Dependency</th> : null}
                     {visibleColumns.status ? <th>Status</th> : null}
-                    {visibleColumns.detail_status ? <th>Detail status</th> : null}
                     {visibleColumns.notes ? <th>Notes / remark</th> : null}
                     <th className="ssa-actions-heading"><span className="sr-only">Actions</span></th>
                   </tr></thead>
@@ -607,11 +601,8 @@ export default function SSAActivitySheet() {
                       <td className="ssa-row-number">{String(index + 1).padStart(2, "0")}</td>
                       <td className="ssa-task-cell"><strong>{activity.title}</strong></td>
                       {visibleColumns.start_date ? <td>{formatDate(activity.start_date)}</td> : null}
-                      {visibleColumns.end_date ? <td>{formatDate(activity.end_date)}</td> : null}
                       {visibleColumns.owner ? <td>{activity.owner}</td> : null}
-                      {visibleColumns.dependency ? <td>{activity.dependency || "—"}</td> : null}
                       {visibleColumns.status ? <td><span className={`ssa-status ssa-status-${activity.status}`}>{statusText[activity.status]}</span></td> : null}
-                      {visibleColumns.detail_status ? <td className="ssa-multiline-cell">{activity.detail_status || "—"}</td> : null}
                       {visibleColumns.notes ? <td>{activity.notes || "—"}</td> : null}
                       <td className="ssa-actions-cell">
                         <div className="ssa-row-actions">
@@ -634,6 +625,7 @@ export default function SSAActivitySheet() {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }
