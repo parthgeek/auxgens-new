@@ -15,6 +15,8 @@ type ActivityGroup = (typeof groups)[number];
 type ActivityInput = {
   group: ActivityGroup;
   title: string;
+  created_by: string;
+  // Stored in the `owner` column: the person handling the ticket.
   owner: string;
   category: ActivityCategory;
   status: ActivityStatus;
@@ -39,6 +41,7 @@ type StoredActivity = {
 type ActivityMetadata = {
   version: 2;
   group?: ActivityGroup;
+  created_by?: string;
   category: ActivityCategory;
   start_date: string;
   end_date: string | null;
@@ -62,6 +65,7 @@ function parseActivity(value: unknown, startDate = activityDate()): ActivityInpu
 
   const body = value as Record<string, unknown>;
   const title = readText(body.title, 180);
+  const createdBy = readText(body.created_by, 100);
   const owner = readText(body.owner, 100);
   const group = body.group ?? "ssa";
   const category = body.category;
@@ -70,7 +74,7 @@ function parseActivity(value: unknown, startDate = activityDate()): ActivityInpu
 
   if (
     !title ||
-    !owner ||
+    !createdBy ||
     !groups.includes(group as ActivityGroup) ||
     !categories.includes(category as ActivityCategory) ||
     !statuses.includes(status as ActivityStatus) ||
@@ -82,6 +86,7 @@ function parseActivity(value: unknown, startDate = activityDate()): ActivityInpu
 
   return {
     title,
+    created_by: createdBy,
     owner,
     group: group as ActivityGroup,
     category: category as ActivityCategory,
@@ -98,6 +103,7 @@ function encodeMetadata(activity: ActivityInput, replacesId?: string | null, del
   const metadata: ActivityMetadata = {
     version: 2,
     group: activity.group,
+    created_by: activity.created_by,
     category: activity.category,
     start_date: activity.start_date,
     end_date: activity.end_date,
@@ -114,6 +120,7 @@ function decodeActivity(activity: StoredActivity) {
   const legacy = {
     id: activity.id,
     title: activity.title,
+    created_by: "",
     owner: activity.owner,
     group: "ssa" as ActivityGroup,
     category: "website" as ActivityCategory,
@@ -137,6 +144,7 @@ function decodeActivity(activity: StoredActivity) {
     return {
       ...legacy,
       group: groups.includes(metadata.group as ActivityGroup) ? metadata.group as ActivityGroup : "ssa" as ActivityGroup,
+      created_by: readText(metadata.created_by, 100),
       category: metadata.category as ActivityCategory,
       start_date: readDate(metadata.start_date) || legacy.start_date,
       end_date: readDate(metadata.end_date) || activity.due_date,
@@ -229,7 +237,7 @@ export async function POST(request: Request) {
 
   if (!activity) {
     return NextResponse.json(
-      { error: "Add an activity, owner, category, and status. If provided, the end date must be on or after the start date." },
+      { error: "Add an activity, the name of the person creating it, a category, and a status. If provided, the end date must be on or after the start date." },
       { status: 400 },
     );
   }
@@ -282,7 +290,7 @@ export async function PATCH(request: Request) {
     const activity = parseActivity(body, currentActivity.start_date);
     if (!activity) {
       return NextResponse.json(
-        { error: "Add an activity, owner, category, and status. If provided, the end date must be on or after the start date." },
+        { error: "Add an activity, the name of the person creating it, a category, and a status. If provided, the end date must be on or after the start date." },
         { status: 400 },
       );
     }
@@ -290,6 +298,8 @@ export async function PATCH(request: Request) {
     if (body.end_date === undefined) activity.end_date = currentActivity.end_date;
     activity.dependency = currentActivity.dependency;
     activity.detail_status = currentActivity.detail_status;
+    // The creator is recorded once and never reassigned by an edit.
+    if (currentActivity.created_by) activity.created_by = currentActivity.created_by;
 
     const response = await supabaseRequest(config, `ssa_activities?id=eq.${encodeURIComponent(id)}`, {
       method: "PATCH",
@@ -355,6 +365,7 @@ export async function DELETE(request: Request) {
     const tombstoneActivity: ActivityInput = {
       group: current.group,
       title: current.title,
+      created_by: current.created_by,
       owner: current.owner,
       category: current.category,
       status: current.status,

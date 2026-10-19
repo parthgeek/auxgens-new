@@ -5125,6 +5125,8 @@ footer::before {
 }
 .ssa-form-context { margin-top: 1rem; color: var(--t4); font-size: .74rem; }
 .ssa-form-context strong { color: var(--forest); }
+.ssa-form-context + .ssa-form-context { margin-top: .3rem; }
+.ssa-unassigned { color: var(--t4); font-style: italic; }
 .ssa-activity-page .ssa-form { display: grid; gap: .85rem; margin-top: 1.2rem; }
 .ssa-activity-page .ssa-form label {
   display: grid;
@@ -5408,9 +5410,10 @@ footer::before {
   column-gap: 1rem;
   row-gap: .9rem;
 }
-.ssa-form-title { grid-column: span 5; }
+.ssa-form-title { grid-column: span 4; }
+.ssa-form-creator { grid-column: span 2; }
 .ssa-form-owner { grid-column: span 2; }
-.ssa-form-category { grid-column: span 3; }
+.ssa-form-category { grid-column: span 2; }
 .ssa-form-status { grid-column: span 2; }
 .ssa-form-notes { grid-column: span 9; }
 .ssa-form-error,
@@ -5450,7 +5453,8 @@ footer::before {
 
 @media (max-width: 1080px) {
   .ssa-activity-page .ssa-entry-panel .ssa-form { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .ssa-form-title { grid-column: span 3; }
+  .ssa-form-title { grid-column: span 6; }
+  .ssa-form-creator { grid-column: span 3; }
   .ssa-form-owner { grid-column: span 3; }
   .ssa-form-category,
   .ssa-form-status { grid-column: span 3; }
@@ -5462,6 +5466,7 @@ footer::before {
   .ssa-activity-page .ssa-entry-panel { margin-inline: -1rem; padding: 1.25rem 1rem; }
   .ssa-activity-page .ssa-entry-panel .ssa-form { grid-template-columns: 1fr; }
   .ssa-form-title,
+  .ssa-form-creator,
   .ssa-form-owner,
   .ssa-form-category,
   .ssa-form-status,

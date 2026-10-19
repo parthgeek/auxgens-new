@@ -28,6 +28,7 @@ type Activity = {
   group: ActivityGroup;
   id: string;
   title: string;
+  created_by: string;
   owner: string;
   category: ActivityCategory;
   status: ActivityStatus;
@@ -39,6 +40,7 @@ type Activity = {
 type ActivityForm = {
   group: ActivityGroup;
   title: string;
+  created_by: string;
   owner: string;
   category: ActivityCategory;
   status: ActivityStatus;
@@ -46,7 +48,7 @@ type ActivityForm = {
 };
 
 type FormErrors = Partial<Record<keyof ActivityForm, string>>;
-type OptionalColumn = "start_date" | "owner" | "category" | "status" | "notes";
+type OptionalColumn = "start_date" | "created_by" | "owner" | "category" | "status" | "notes";
 
 const activityGroups: Array<{ id: ActivityGroup; label: string }> = [
   { id: "ssa", label: "SSA Activity" },
@@ -94,16 +96,18 @@ const statusFilters: StatusFilter[] = ["all", "planned", "in_progress", "blocked
 
 const optionalColumns: Array<{ id: OptionalColumn; label: string }> = [
   { id: "start_date", label: "Start date" },
-  { id: "owner", label: "Owner" },
+  { id: "created_by", label: "Created by" },
+  { id: "owner", label: "Handled by" },
   { id: "category", label: "Category" },
   { id: "status", label: "Status" },
   { id: "notes", label: "Notes / remark" },
 ];
 
-function createInitialForm(category: ActivityCategory, group: ActivityGroup): ActivityForm {
+function createInitialForm(category: ActivityCategory, group: ActivityGroup, createdBy = ""): ActivityForm {
   return {
     group,
     title: "",
+    created_by: createdBy,
     owner: "",
     category,
     status: "planned",
@@ -115,6 +119,7 @@ function formFromActivity(activity: Activity): ActivityForm {
   return {
     group: activity.group,
     title: activity.title,
+    created_by: activity.created_by,
     owner: activity.owner,
     category: activity.category,
     status: activity.status,
@@ -133,7 +138,7 @@ function formatDate(value: string | null) {
 
 function validateField(field: keyof ActivityForm, value: string) {
   if (field === "title" && !value.trim()) return "Add a task or activity.";
-  if (field === "owner" && !value.trim()) return "Add the person responsible.";
+  if (field === "created_by" && !value.trim()) return "Add your name so the team knows who logged this.";
   return undefined;
 }
 
@@ -151,6 +156,24 @@ function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
   tabs[nextIndex].focus();
   tabs[nextIndex].click();
+}
+
+const creatorStorageKey = "ssa-activity-created-by";
+
+function readStoredCreator() {
+  try {
+    return window.localStorage.getItem(creatorStorageKey)?.trim() ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function storeCreator(name: string) {
+  try {
+    window.localStorage.setItem(creatorStorageKey, name);
+  } catch {
+    // Browsers with site data blocked simply do not remember the name.
+  }
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit, timeout = 12_000) {
@@ -181,6 +204,7 @@ export default function SSAActivitySheet() {
   const [compactRows, setCompactRows] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<Record<OptionalColumn, boolean>>({
     start_date: true,
+    created_by: true,
     owner: true,
     category: true,
     status: true,
@@ -211,6 +235,12 @@ export default function SSAActivitySheet() {
     void loadActivities();
   }, []);
 
+  // Remember who is logging activities so the name is not retyped every time.
+  useEffect(() => {
+    const savedName = readStoredCreator();
+    if (savedName) setForm((current) => (current.created_by ? current : { ...current, created_by: savedName }));
+  }, []);
+
   useEffect(() => {
     if (!successMessage) return;
     const timeout = window.setTimeout(() => setSuccessMessage(""), 4_500);
@@ -236,6 +266,7 @@ export default function SSAActivitySheet() {
       const matchesStatus = statusFilter === "all" || activity.status === statusFilter;
       const matchesSearch = !normalizedQuery || [
         activity.title,
+        activity.created_by,
         activity.owner,
         activity.notes,
       ].join(" ").toLowerCase().includes(normalizedQuery);
@@ -284,7 +315,8 @@ export default function SSAActivitySheet() {
         ? current.map((activity) => activity.id === previousEditingId ? result.activity : activity)
         : [result.activity, ...current]);
       setActiveGroup(result.activity.group);
-      setForm(createInitialForm(result.activity.category, result.activity.group));
+      storeCreator(form.created_by);
+      setForm(createInitialForm(result.activity.category, result.activity.group, form.created_by));
       setEditingId(null);
       setFormErrors({});
       setStatusFilter("all");
@@ -301,7 +333,7 @@ export default function SSAActivitySheet() {
     if (group === activeGroup || saving) return;
     setActiveGroup(group);
     setEditingId(null);
-    setForm(createInitialForm(form.category, group));
+    setForm(createInitialForm(form.category, group, form.created_by));
     setFormErrors({});
     setFormError("");
     setStatusFilter("all");
@@ -333,7 +365,7 @@ export default function SSAActivitySheet() {
 
   const cancelEditing = () => {
     setEditingId(null);
-    setForm(createInitialForm(form.category, activeGroup));
+    setForm(createInitialForm(form.category, activeGroup, form.created_by));
     setFormErrors({});
     setFormError("");
   };
@@ -397,6 +429,7 @@ export default function SSAActivitySheet() {
               <span className="ssa-panel-icon">{editingId ? <PiPencilSimpleDuotone aria-hidden="true" /> : <PiPlusDuotone aria-hidden="true" />}</span>
             </div>
             <p className="ssa-form-context">{editingId ? "Change any detail below, then save your update." : <>Adding to <strong>{activeGroupLabel} / {formCategoryData.label}</strong></>}</p>
+            <p className="ssa-form-context">{editingId ? <>Taking this on? Put your name in <strong>Handled by</strong>.</> : <>Put your own name in <strong>Created by</strong>. Leave <strong>Handled by</strong> empty until someone picks the task up.</>}</p>
 
             <form className="ssa-form" onSubmit={submitActivity} noValidate>
               <label className="ssa-form-title">
@@ -414,17 +447,27 @@ export default function SSAActivitySheet() {
                 <FieldError message={formErrors.title} />
               </label>
 
+              <label className="ssa-form-creator">
+                <span className="ssa-field-label">Created by <span aria-hidden="true">*</span></span>
+                <input
+                  value={form.created_by}
+                  onChange={(event) => updateForm("created_by", event.target.value)}
+                  onBlur={() => setFormErrors((current) => ({ ...current, created_by: validateField("created_by", form.created_by) }))}
+                  aria-invalid={Boolean(formErrors.created_by)}
+                  maxLength={100}
+                  placeholder="Your name"
+                />
+                <FieldError message={formErrors.created_by} />
+              </label>
+
               <label className="ssa-form-owner">
-                <span className="ssa-field-label">Owner <span aria-hidden="true">*</span></span>
+                <span className="ssa-field-label">Handled by <span className="ssa-optional">optional</span></span>
                 <input
                   value={form.owner}
                   onChange={(event) => updateForm("owner", event.target.value)}
-                  onBlur={() => setFormErrors((current) => ({ ...current, owner: validateField("owner", form.owner) }))}
-                  aria-invalid={Boolean(formErrors.owner)}
                   maxLength={100}
-                  placeholder="Team member responsible"
+                  placeholder="Name of the person working on it"
                 />
-                <FieldError message={formErrors.owner} />
               </label>
 
               <label className="ssa-form-category">
@@ -520,7 +563,7 @@ export default function SSAActivitySheet() {
               <div className="ssa-state">
                 <PiClipboardTextDuotone aria-hidden="true" />
                 <h3>{groupActivities.length ? "No matching activities" : `Start the ${activeGroupLabel.toLowerCase()} list`}</h3>
-                <p>{groupActivities.length ? "Try another search or return to all work." : "Use the form to add the first activity and assign its owner."}</p>
+                <p>{groupActivities.length ? "Try another search or return to all work." : "Use the form to add the first activity and record who is handling it."}</p>
                 {groupActivities.length
                   ? <button type="button" onClick={() => { setSearchQuery(""); setStatusFilter("all"); }}>Clear filters</button>
                   : <button type="button" onClick={focusForm}>Add activity</button>}
@@ -532,7 +575,8 @@ export default function SSAActivitySheet() {
                   <thead><tr>
                     <th>SL</th><th>Task / activity name</th>
                     {visibleColumns.start_date ? <th>Start date</th> : null}
-                    {visibleColumns.owner ? <th>Owner</th> : null}
+                    {visibleColumns.created_by ? <th>Created by</th> : null}
+                    {visibleColumns.owner ? <th>Handled by</th> : null}
                     {visibleColumns.category ? <th>Category</th> : null}
                     {visibleColumns.status ? <th>Status</th> : null}
                     {visibleColumns.notes ? <th>Notes / remark</th> : null}
@@ -543,7 +587,8 @@ export default function SSAActivitySheet() {
                       <td className="ssa-row-number">{String(index + 1).padStart(2, "0")}</td>
                       <td className="ssa-task-cell"><strong>{activity.title}</strong></td>
                       {visibleColumns.start_date ? <td>{formatDate(activity.start_date)}</td> : null}
-                      {visibleColumns.owner ? <td>{activity.owner}</td> : null}
+                      {visibleColumns.created_by ? <td>{activity.created_by || "—"}</td> : null}
+                      {visibleColumns.owner ? <td>{activity.owner || <span className="ssa-unassigned">Unassigned</span>}</td> : null}
                       {visibleColumns.category ? <td>{(categories.find((category) => category.id === activity.category) ?? categories[1]).label}</td> : null}
                       {visibleColumns.status ? <td><span className={`ssa-status ssa-status-${activity.status}`}>{statusText[activity.status]}</span></td> : null}
                       {visibleColumns.notes ? <td>{activity.notes || "—"}</td> : null}
