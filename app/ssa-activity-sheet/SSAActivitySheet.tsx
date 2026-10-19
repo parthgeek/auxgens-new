@@ -29,7 +29,7 @@ type Activity = {
   id: string;
   title: string;
   created_by: string;
-  owner: string;
+  handled_by: string;
   category: ActivityCategory;
   status: ActivityStatus;
   start_date: string | null;
@@ -41,14 +41,14 @@ type ActivityForm = {
   group: ActivityGroup;
   title: string;
   created_by: string;
-  owner: string;
+  handled_by: string;
   category: ActivityCategory;
   status: ActivityStatus;
   notes: string;
 };
 
 type FormErrors = Partial<Record<keyof ActivityForm, string>>;
-type OptionalColumn = "start_date" | "created_by" | "owner" | "category" | "status" | "notes";
+type OptionalColumn = "start_date" | "created_by" | "handled_by" | "category" | "status" | "notes";
 
 const activityGroups: Array<{ id: ActivityGroup; label: string }> = [
   { id: "ssa", label: "SSA Activity" },
@@ -97,7 +97,7 @@ const statusFilters: StatusFilter[] = ["all", "planned", "in_progress", "blocked
 const optionalColumns: Array<{ id: OptionalColumn; label: string }> = [
   { id: "start_date", label: "Start date" },
   { id: "created_by", label: "Created by" },
-  { id: "owner", label: "Handled by" },
+  { id: "handled_by", label: "Handled by" },
   { id: "category", label: "Category" },
   { id: "status", label: "Status" },
   { id: "notes", label: "Notes / remark" },
@@ -108,7 +108,7 @@ function createInitialForm(category: ActivityCategory, group: ActivityGroup, cre
     group,
     title: "",
     created_by: createdBy,
-    owner: "",
+    handled_by: "",
     category,
     status: "planned",
     notes: "",
@@ -120,7 +120,7 @@ function formFromActivity(activity: Activity): ActivityForm {
     group: activity.group,
     title: activity.title,
     created_by: activity.created_by,
-    owner: activity.owner,
+    handled_by: activity.handled_by,
     category: activity.category,
     status: activity.status,
     notes: activity.notes,
@@ -205,7 +205,7 @@ export default function SSAActivitySheet() {
   const [visibleColumns, setVisibleColumns] = useState<Record<OptionalColumn, boolean>>({
     start_date: true,
     created_by: true,
-    owner: true,
+    handled_by: true,
     category: true,
     status: true,
     notes: true,
@@ -267,7 +267,7 @@ export default function SSAActivitySheet() {
       const matchesSearch = !normalizedQuery || [
         activity.title,
         activity.created_by,
-        activity.owner,
+        activity.handled_by,
         activity.notes,
       ].join(" ").toLowerCase().includes(normalizedQuery);
       return matchesStatus && matchesSearch;
@@ -379,7 +379,7 @@ export default function SSAActivitySheet() {
             <span className="eyebrow">{activeGroup.toUpperCase()} team workboard</span>
             <h1>Team activity desk</h1>
             <p className="ssa-hero-lead">Plan clearly. Move work forward.</p>
-            <p>Log the team&apos;s activity, assign an owner, and keep every task moving from plan to completion.</p>
+            <p>Log the team&apos;s activity, record who created and who handles it, and keep every task moving from plan to completion.</p>
           </div>
           <div className="ssa-summary" aria-label={`${activeGroupLabel} summary`}>
             <button type="button" className={statusFilter === "all" ? "is-active" : ""} aria-pressed={statusFilter === "all"} aria-controls="ssa-activity-list" onClick={() => filterFromSummary("all")}>
@@ -463,8 +463,8 @@ export default function SSAActivitySheet() {
               <label className="ssa-form-owner">
                 <span className="ssa-field-label">Handled by <span className="ssa-optional">optional</span></span>
                 <input
-                  value={form.owner}
-                  onChange={(event) => updateForm("owner", event.target.value)}
+                  value={form.handled_by}
+                  onChange={(event) => updateForm("handled_by", event.target.value)}
                   maxLength={100}
                   placeholder="Name of the person working on it"
                 />
@@ -516,7 +516,7 @@ export default function SSAActivitySheet() {
               <label className="ssa-search">
                 <span className="sr-only">Search activities</span>
                 <PiMagnifyingGlassDuotone aria-hidden="true" />
-                <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search task, owner, or note" />
+                <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search task, name, or note" />
                 {searchQuery ? <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search"><PiXDuotone aria-hidden="true" /></button> : null}
               </label>
 
@@ -576,7 +576,7 @@ export default function SSAActivitySheet() {
                     <th>SL</th><th>Task / activity name</th>
                     {visibleColumns.start_date ? <th>Start date</th> : null}
                     {visibleColumns.created_by ? <th>Created by</th> : null}
-                    {visibleColumns.owner ? <th>Handled by</th> : null}
+                    {visibleColumns.handled_by ? <th>Handled by</th> : null}
                     {visibleColumns.category ? <th>Category</th> : null}
                     {visibleColumns.status ? <th>Status</th> : null}
                     {visibleColumns.notes ? <th>Notes / remark</th> : null}
@@ -588,7 +588,7 @@ export default function SSAActivitySheet() {
                       <td className="ssa-task-cell"><strong>{activity.title}</strong></td>
                       {visibleColumns.start_date ? <td>{formatDate(activity.start_date)}</td> : null}
                       {visibleColumns.created_by ? <td>{activity.created_by || "—"}</td> : null}
-                      {visibleColumns.owner ? <td>{activity.owner || <span className="ssa-unassigned">Unassigned</span>}</td> : null}
+                      {visibleColumns.handled_by ? <td>{activity.handled_by || <span className="ssa-unassigned">Unassigned</span>}</td> : null}
                       {visibleColumns.category ? <td>{(categories.find((category) => category.id === activity.category) ?? categories[1]).label}</td> : null}
                       {visibleColumns.status ? <td><span className={`ssa-status ssa-status-${activity.status}`}>{statusText[activity.status]}</span></td> : null}
                       {visibleColumns.notes ? <td>{activity.notes || "—"}</td> : null}

@@ -15,9 +15,9 @@ type ActivityGroup = (typeof groups)[number];
 type ActivityInput = {
   group: ActivityGroup;
   title: string;
+  // Written to the `owner` column, which rejects empty values.
   created_by: string;
-  // Stored in the `owner` column: the person handling the ticket.
-  owner: string;
+  handled_by: string;
   category: ActivityCategory;
   status: ActivityStatus;
   start_date: string;
@@ -42,6 +42,7 @@ type ActivityMetadata = {
   version: 2;
   group?: ActivityGroup;
   created_by?: string;
+  handled_by?: string;
   category: ActivityCategory;
   start_date: string;
   end_date: string | null;
@@ -66,7 +67,7 @@ function parseActivity(value: unknown, startDate = activityDate()): ActivityInpu
   const body = value as Record<string, unknown>;
   const title = readText(body.title, 180);
   const createdBy = readText(body.created_by, 100);
-  const owner = readText(body.owner, 100);
+  const handledBy = readText(body.handled_by, 100);
   const group = body.group ?? "ssa";
   const category = body.category;
   const status = body.status;
@@ -87,7 +88,7 @@ function parseActivity(value: unknown, startDate = activityDate()): ActivityInpu
   return {
     title,
     created_by: createdBy,
-    owner,
+    handled_by: handledBy,
     group: group as ActivityGroup,
     category: category as ActivityCategory,
     status: status as ActivityStatus,
@@ -104,6 +105,7 @@ function encodeMetadata(activity: ActivityInput, replacesId?: string | null, del
     version: 2,
     group: activity.group,
     created_by: activity.created_by,
+    handled_by: activity.handled_by,
     category: activity.category,
     start_date: activity.start_date,
     end_date: activity.end_date,
@@ -121,7 +123,7 @@ function decodeActivity(activity: StoredActivity) {
     id: activity.id,
     title: activity.title,
     created_by: "",
-    owner: activity.owner,
+    handled_by: activity.owner,
     group: "ssa" as ActivityGroup,
     category: "website" as ActivityCategory,
     status: activity.status,
@@ -144,7 +146,9 @@ function decodeActivity(activity: StoredActivity) {
     return {
       ...legacy,
       group: groups.includes(metadata.group as ActivityGroup) ? metadata.group as ActivityGroup : "ssa" as ActivityGroup,
+      // Rows written before the two-name flow kept the handler in the `owner` column.
       created_by: readText(metadata.created_by, 100),
+      handled_by: metadata.created_by ? readText(metadata.handled_by, 100) : activity.owner,
       category: metadata.category as ActivityCategory,
       start_date: readDate(metadata.start_date) || legacy.start_date,
       end_date: readDate(metadata.end_date) || activity.due_date,
@@ -248,7 +252,7 @@ export async function POST(request: Request) {
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
         title: activity.title,
-        owner: activity.owner,
+        owner: activity.created_by,
         status: activity.status,
         priority: "medium",
         due_date: activity.end_date,
@@ -306,7 +310,7 @@ export async function PATCH(request: Request) {
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
         title: activity.title,
-        owner: activity.owner,
+        owner: activity.created_by,
         status: activity.status,
         priority: "medium",
         due_date: activity.end_date,
@@ -324,7 +328,7 @@ export async function PATCH(request: Request) {
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
         title: activity.title,
-        owner: activity.owner,
+        owner: activity.created_by,
         status: activity.status,
         priority: "medium",
         due_date: activity.end_date,
@@ -366,7 +370,7 @@ export async function DELETE(request: Request) {
       group: current.group,
       title: current.title,
       created_by: current.created_by,
-      owner: current.owner,
+      handled_by: current.handled_by,
       category: current.category,
       status: current.status,
       start_date: current.start_date,
