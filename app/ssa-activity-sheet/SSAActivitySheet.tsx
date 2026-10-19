@@ -15,7 +15,6 @@ import {
   PiMagnifyingGlassDuotone,
   PiPlusDuotone,
   PiSlidersHorizontalDuotone,
-  PiTrashDuotone,
   PiWarningCircleDuotone,
   PiXDuotone,
 } from "react-icons/pi";
@@ -47,7 +46,7 @@ type ActivityForm = {
 };
 
 type FormErrors = Partial<Record<keyof ActivityForm, string>>;
-type OptionalColumn = "start_date" | "owner" | "status" | "notes";
+type OptionalColumn = "start_date" | "owner" | "category" | "status" | "notes";
 
 const activityGroups: Array<{ id: ActivityGroup; label: string }> = [
   { id: "ssa", label: "SSA Activity" },
@@ -96,6 +95,7 @@ const statusFilters: StatusFilter[] = ["all", "planned", "in_progress", "blocked
 const optionalColumns: Array<{ id: OptionalColumn; label: string }> = [
   { id: "start_date", label: "Start date" },
   { id: "owner", label: "Owner" },
+  { id: "category", label: "Category" },
   { id: "status", label: "Status" },
   { id: "notes", label: "Notes / remark" },
 ];
@@ -166,14 +166,12 @@ async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit, ti
 
 export default function SSAActivitySheet() {
   const [activeGroup, setActiveGroup] = useState<ActivityGroup>("ssa");
-  const [activeCategory, setActiveCategory] = useState<ActivityCategory>("website");
   const [activities, setActivities] = useState<Activity[]>([]);
   const [form, setForm] = useState<ActivityForm>(() => createInitialForm("website", "ssa"));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -184,6 +182,7 @@ export default function SSAActivitySheet() {
   const [visibleColumns, setVisibleColumns] = useState<Record<OptionalColumn, boolean>>({
     start_date: true,
     owner: true,
+    category: true,
     status: true,
     notes: true,
   });
@@ -218,22 +217,22 @@ export default function SSAActivitySheet() {
     return () => window.clearTimeout(timeout);
   }, [successMessage]);
 
-  const activeCategoryData = categories.find((category) => category.id === activeCategory) ?? categories[1];
+  const formCategoryData = categories.find((category) => category.id === form.category) ?? categories[1];
   const activeGroupLabel = activityGroups.find((group) => group.id === activeGroup)!.label;
-  const categoryActivities = useMemo(
-    () => activities.filter((activity) => activity.group === activeGroup && activity.category === activeCategory),
-    [activeGroup, activeCategory, activities],
+  const groupActivities = useMemo(
+    () => activities.filter((activity) => activity.group === activeGroup),
+    [activeGroup, activities],
   );
   const counts = useMemo(
-    () => categoryActivities.reduce(
+    () => groupActivities.reduce(
       (current, activity) => ({ ...current, [activity.status]: current[activity.status] + 1 }),
       { planned: 0, in_progress: 0, blocked: 0, done: 0 } as Record<ActivityStatus, number>,
     ),
-    [categoryActivities],
+    [groupActivities],
   );
   const visibleActivities = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    return categoryActivities.filter((activity) => {
+    return groupActivities.filter((activity) => {
       const matchesStatus = statusFilter === "all" || activity.status === statusFilter;
       const matchesSearch = !normalizedQuery || [
         activity.title,
@@ -242,7 +241,7 @@ export default function SSAActivitySheet() {
       ].join(" ").toLowerCase().includes(normalizedQuery);
       return matchesStatus && matchesSearch;
     });
-  }, [categoryActivities, searchQuery, statusFilter]);
+  }, [groupActivities, searchQuery, statusFilter]);
 
   const updateForm = <K extends keyof ActivityForm>(field: K, value: ActivityForm[K]) => {
     setForm({ ...form, [field]: value });
@@ -284,13 +283,12 @@ export default function SSAActivitySheet() {
       setActivities((current) => isEditing
         ? current.map((activity) => activity.id === previousEditingId ? result.activity : activity)
         : [result.activity, ...current]);
-      setActiveCategory(result.activity.category);
       setActiveGroup(result.activity.group);
       setForm(createInitialForm(result.activity.category, result.activity.group));
       setEditingId(null);
       setFormErrors({});
       setStatusFilter("all");
-      setSuccessMessage(isEditing ? "Activity updated." : `Added to ${activeCategoryData.label.toLowerCase()}.`);
+      setSuccessMessage(isEditing ? "Activity updated." : `Added to ${(categories.find((category) => category.id === result.activity.category) ?? categories[1]).label.toLowerCase()}.`);
       activityInputRef.current?.focus();
     } catch (caught) {
       setFormError(caught instanceof Error ? caught.message : "Unable to save activity.");
@@ -299,19 +297,11 @@ export default function SSAActivitySheet() {
     }
   };
 
-  const chooseCategory = (category: ActivityCategory) => {
-    setActiveCategory(category);
-    if (!editingId) setForm((current) => ({ ...current, category }));
-    setStatusFilter("all");
-    setSearchQuery("");
-    setSuccessMessage("");
-  };
-
   const chooseGroup = (group: ActivityGroup) => {
     if (group === activeGroup || saving) return;
     setActiveGroup(group);
     setEditingId(null);
-    setForm(createInitialForm(activeCategory, group));
+    setForm(createInitialForm(form.category, group));
     setFormErrors({});
     setFormError("");
     setStatusFilter("all");
@@ -336,7 +326,6 @@ export default function SSAActivitySheet() {
     setFormErrors({});
     setFormError("");
     setSuccessMessage("");
-    setActiveCategory(activity.category);
     setActiveGroup(activity.group);
     formPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.setTimeout(() => activityInputRef.current?.focus(), 350);
@@ -344,32 +333,9 @@ export default function SSAActivitySheet() {
 
   const cancelEditing = () => {
     setEditingId(null);
-    setForm(createInitialForm(activeCategory, activeGroup));
+    setForm(createInitialForm(form.category, activeGroup));
     setFormErrors({});
     setFormError("");
-  };
-
-  const deleteActivity = async (activity: Activity) => {
-    if (!window.confirm(`Delete "${activity.title}"? This action cannot be undone.`)) return;
-
-    setDeletingId(activity.id);
-    setSuccessMessage("");
-    try {
-      const response = await fetchWithTimeout("/api/ssa-activities", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: activity.id }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Unable to delete activity.");
-      setActivities((current) => current.filter((item) => item.id !== activity.id));
-      if (editingId === activity.id) cancelEditing();
-      setSuccessMessage(`"${activity.title}" deleted.`);
-    } catch (caught) {
-      setFormError(caught instanceof Error ? caught.message : "Unable to delete activity.");
-    } finally {
-      setDeletingId(null);
-    }
   };
 
   return (
@@ -383,9 +349,9 @@ export default function SSAActivitySheet() {
             <p className="ssa-hero-lead">Plan clearly. Move work forward.</p>
             <p>Log the team&apos;s activity, assign an owner, and keep every task moving from plan to completion.</p>
           </div>
-          <div className="ssa-summary" aria-label={`${activeCategoryData.label} summary`}>
+          <div className="ssa-summary" aria-label={`${activeGroupLabel} summary`}>
             <button type="button" className={statusFilter === "all" ? "is-active" : ""} aria-pressed={statusFilter === "all"} aria-controls="ssa-activity-list" onClick={() => filterFromSummary("all")}>
-              <PiListChecksDuotone aria-hidden="true" /><span><strong>{categoryActivities.length}</strong>All work</span>
+              <PiListChecksDuotone aria-hidden="true" /><span><strong>{groupActivities.length}</strong>All work</span>
             </button>
             <button type="button" className={statusFilter === "planned" ? "is-active" : ""} aria-pressed={statusFilter === "planned"} aria-controls="ssa-activity-list" onClick={() => filterFromSummary("planned")}>
               <PiCalendarBlankDuotone aria-hidden="true" /><span><strong>{counts.planned}</strong>Planned</span>
@@ -423,39 +389,14 @@ export default function SSAActivitySheet() {
       </nav>
 
       <div id="ssa-group-panel" role="tabpanel" aria-labelledby={`ssa-group-tab-${activeGroup}`}>
-      <nav className="ssa-category-nav" aria-label={`${activeGroupLabel} categories`}>
-        <div className="ssa-wrap ssa-category-tabs" role="tablist" aria-label={`${activeGroupLabel} categories`}>
-          {categories.map((category) => {
-            const isActive = category.id === activeCategory;
-            return (
-              <button
-                key={category.id}
-                id={`ssa-category-tab-${category.id}`}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-controls="ssa-workboard-panel"
-                tabIndex={isActive ? 0 : -1}
-                className={isActive ? "is-active" : ""}
-                onClick={() => chooseCategory(category.id)}
-                onKeyDown={handleTabKeyDown}
-              >
-                <strong><span className="ssa-tab-full">{category.label}</span><span className="ssa-tab-short">{category.shortLabel}</span></strong>
-                <span>{category.description}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      <section id="ssa-workboard-panel" role="tabpanel" aria-labelledby={`ssa-category-tab-${activeCategory}`} className="ssa-workspace">
+      <section id="ssa-workboard-panel" className="ssa-workspace">
         <div className="ssa-wrap ssa-workspace-grid">
           <section ref={formPanelRef} className="ssa-entry-panel" aria-labelledby="ssa-entry-title">
             <div className="ssa-panel-heading">
               <div><p className="eyebrow">{editingId ? "Editing activity" : "New update"}</p><h2 id="ssa-entry-title">{editingId ? "Edit activity" : "Add activity"}</h2></div>
               <span className="ssa-panel-icon">{editingId ? <PiPencilSimpleDuotone aria-hidden="true" /> : <PiPlusDuotone aria-hidden="true" />}</span>
             </div>
-            <p className="ssa-form-context">{editingId ? "Change any detail below, then save your update." : <>Adding to <strong>{activeGroupLabel} / {activeCategoryData.label}</strong></>}</p>
+            <p className="ssa-form-context">{editingId ? "Change any detail below, then save your update." : <>Adding to <strong>{activeGroupLabel} / {formCategoryData.label}</strong></>}</p>
 
             <form className="ssa-form" onSubmit={submitActivity} noValidate>
               <label className="ssa-form-title">
@@ -468,7 +409,7 @@ export default function SSAActivitySheet() {
                   aria-invalid={Boolean(formErrors.title)}
                   maxLength={180}
                   rows={1}
-                  placeholder={activeCategoryData.placeholder}
+                  placeholder={formCategoryData.placeholder}
                 />
                 <FieldError message={formErrors.title} />
               </label>
@@ -524,7 +465,7 @@ export default function SSAActivitySheet() {
 
           <div id="ssa-activity-list" ref={activitySheetRef} className="ssa-sheet">
             <div className="ssa-sheet-header">
-              <div><p className="eyebrow">{activeGroupLabel} sheet</p><h2>{activeCategoryData.shortLabel} workboard</h2><p>{activeCategoryData.description}.</p></div>
+              <div><p className="eyebrow">{activeGroupLabel} sheet</p><h2>Activity workboard</h2><p>Every logged activity for this sheet, across all categories.</p></div>
               <button className="ssa-add-shortcut" type="button" onClick={() => { cancelEditing(); focusForm(); }}><PiPlusDuotone aria-hidden="true" />Add activity</button>
             </div>
 
@@ -566,7 +507,7 @@ export default function SSAActivitySheet() {
             <div className="ssa-filter-row" aria-label="Filter activities by status">
               {statusFilters.map((status) => (
                 <button key={status} type="button" className={statusFilter === status ? "is-active" : ""} onClick={() => setStatusFilter(status)}>
-                  {status === "all" ? "All work" : statusText[status]} <span>{status === "all" ? categoryActivities.length : counts[status]}</span>
+                  {status === "all" ? "All work" : statusText[status]} <span>{status === "all" ? groupActivities.length : counts[status]}</span>
                 </button>
               ))}
             </div>
@@ -578,20 +519,21 @@ export default function SSAActivitySheet() {
             ) : visibleActivities.length === 0 ? (
               <div className="ssa-state">
                 <PiClipboardTextDuotone aria-hidden="true" />
-                <h3>{categoryActivities.length ? "No matching activities" : `Start the ${activeCategoryData.shortLabel.toLowerCase()} list`}</h3>
-                <p>{categoryActivities.length ? "Try another search or return to all work." : "Use the form to add the first activity and assign its owner."}</p>
-                {categoryActivities.length
+                <h3>{groupActivities.length ? "No matching activities" : `Start the ${activeGroupLabel.toLowerCase()} list`}</h3>
+                <p>{groupActivities.length ? "Try another search or return to all work." : "Use the form to add the first activity and assign its owner."}</p>
+                {groupActivities.length
                   ? <button type="button" onClick={() => { setSearchQuery(""); setStatusFilter("all"); }}>Clear filters</button>
                   : <button type="button" onClick={focusForm}>Add activity</button>}
               </div>
             ) : (
               <div className="ssa-table-wrap">
                 <table className={`ssa-table${compactRows ? " is-compact" : ""}`}>
-                  <caption className="sr-only">{activeGroupLabel} / {activeCategoryData.label}</caption>
+                  <caption className="sr-only">{activeGroupLabel} activities</caption>
                   <thead><tr>
                     <th>SL</th><th>Task / activity name</th>
                     {visibleColumns.start_date ? <th>Start date</th> : null}
                     {visibleColumns.owner ? <th>Owner</th> : null}
+                    {visibleColumns.category ? <th>Category</th> : null}
                     {visibleColumns.status ? <th>Status</th> : null}
                     {visibleColumns.notes ? <th>Notes / remark</th> : null}
                     <th className="ssa-actions-heading"><span className="sr-only">Actions</span></th>
@@ -602,15 +544,12 @@ export default function SSAActivitySheet() {
                       <td className="ssa-task-cell"><strong>{activity.title}</strong></td>
                       {visibleColumns.start_date ? <td>{formatDate(activity.start_date)}</td> : null}
                       {visibleColumns.owner ? <td>{activity.owner}</td> : null}
+                      {visibleColumns.category ? <td>{(categories.find((category) => category.id === activity.category) ?? categories[1]).label}</td> : null}
                       {visibleColumns.status ? <td><span className={`ssa-status ssa-status-${activity.status}`}>{statusText[activity.status]}</span></td> : null}
                       {visibleColumns.notes ? <td>{activity.notes || "—"}</td> : null}
                       <td className="ssa-actions-cell">
                         <div className="ssa-row-actions">
-                          <button className="ssa-edit-button" type="button" onClick={() => editActivity(activity)} disabled={deletingId === activity.id}><PiPencilSimpleDuotone aria-hidden="true" />Edit</button>
-                          <button className="ssa-delete-button" type="button" onClick={() => void deleteActivity(activity)} disabled={deletingId === activity.id}>
-                            {deletingId === activity.id ? <PiCircleNotchDuotone className="ssa-spin" aria-hidden="true" /> : <PiTrashDuotone aria-hidden="true" />}
-                            {deletingId === activity.id ? "Deleting" : "Delete"}
-                          </button>
+                          <button className="ssa-edit-button" type="button" onClick={() => editActivity(activity)}><PiPencilSimpleDuotone aria-hidden="true" />Edit</button>
                         </div>
                       </td>
                     </tr>
@@ -620,7 +559,7 @@ export default function SSAActivitySheet() {
             )}
 
             {!loading && !error ? (
-              <div className="ssa-table-footer"><span>{visibleActivities.length} of {categoryActivities.length} activities shown</span><span><PiSlidersHorizontalDuotone aria-hidden="true" />One column setup for all lists</span></div>
+              <div className="ssa-table-footer"><span>{visibleActivities.length} of {groupActivities.length} activities shown</span><span><PiSlidersHorizontalDuotone aria-hidden="true" />One column setup for all lists</span></div>
             ) : null}
           </div>
         </div>
