@@ -71,6 +71,14 @@ const brands = {
       <img className="brand-logo-img" src="/bank%20of%20india.png" alt="" loading="lazy" />
     ),
   },
+  cyanofabric: {
+    id: "cyanofabric",
+    name: "CyanoFabric",
+    url: "https://www.cyanofabric.com/",
+    logo: (
+      <img className="brand-logo-img" src="/cyanofabric-logo-full.png" alt="" loading="lazy" />
+    ),
+  },
 };
 
 const items = [
@@ -83,6 +91,7 @@ const items = [
   brands.docq,
   brands.virtusa,
   brands.bankOfIndia,
+  brands.cyanofabric,
 ];
 
 export default function Ticker() {
