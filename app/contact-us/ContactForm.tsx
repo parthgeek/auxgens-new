@@ -8,7 +8,11 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
-import { PiPaperPlaneTiltDuotone } from "react-icons/pi";
+import {
+  PiArrowRightBold,
+  PiCheckCircleDuotone,
+  PiPaperPlaneTiltDuotone,
+} from "react-icons/pi";
 import {
   contactFieldLimits,
   contactRegions,
@@ -230,9 +234,11 @@ export default function ContactForm() {
     error: submitError,
   }[status];
 
+  const messageLength = values.message.trim().length;
+
   return (
     <form
-      className="contact-form anim d1"
+      className="cx-form"
       id="contact-form"
       onSubmit={handleSubmit}
       noValidate
@@ -256,134 +262,170 @@ export default function ContactForm() {
           onChange={(event) => setWebsite(event.target.value)}
         />
       </div>
-      <div className="contact-form-head">
-        <p className="eyebrow">Send an enquiry</p>
-        <h2>Protect what matters.</h2>
-        <p>
-          Share the context you can. Auxgens will respond through the primary
-          sales inbox within one business day.
-        </p>
-      </div>
 
-      <div className="contact-form-grid">
-        <div className="field-block">
-          <label htmlFor="name">Full name *</label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            minLength={contactFieldLimits.name.min}
-            maxLength={contactFieldLimits.name.max}
-            value={values.name}
-            onChange={handleChange}
-            aria-invalid={Boolean(errors.name)}
-            aria-describedby="name-help name-error"
-          />
-          <span id="name-help" className="field-help">Who should our team contact?</span>
-          {errors.name && <span id="name-error" className="field-error">{errors.name}</span>}
-        </div>
-
-        <div className="field-block">
-          <label htmlFor="email">Work email *</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            maxLength={contactFieldLimits.email.max}
-            value={values.email}
-            onChange={handleChange}
-            aria-invalid={Boolean(errors.email)}
-            aria-describedby="email-help email-error"
-          />
-          <span id="email-help" className="field-help">Use the address where we can reply.</span>
-          {errors.email && <span id="email-error" className="field-error">{errors.email}</span>}
-        </div>
-
-        <div className="field-block">
-          <label htmlFor="company">Company</label>
-          <input
-            id="company"
-            name="company"
-            type="text"
-            autoComplete="organization"
-            maxLength={contactFieldLimits.company.max}
-            value={values.company}
-            onChange={handleChange}
-            aria-describedby="company-help"
-          />
-          <span id="company-help" className="field-help">Optional, but useful for routing.</span>
-        </div>
-
-        <div className="field-block">
-          <label htmlFor="service">Service area *</label>
-          <select
-            id="service"
-            name="service"
-            value={values.service}
-            onChange={handleChange}
-            aria-invalid={Boolean(errors.service)}
-            aria-describedby="service-help service-error"
-          >
-            <option value="">Select a service</option>
-            {contactServices.map((service) => (
-              <option key={service} value={service}>{service}</option>
-            ))}
-          </select>
-          <span id="service-help" className="field-help">Pick the closest match.</span>
-          {errors.service && <span id="service-error" className="field-error">{errors.service}</span>}
-        </div>
-
-        <div className="field-block">
-          <label htmlFor="region">Region</label>
-          <select
-            id="region"
-            name="region"
-            value={values.region}
-            onChange={handleChange}
-            aria-describedby="region-help"
-          >
-            <option value="">Select a region</option>
-            {contactRegions.map((region) => (
-              <option key={region} value={region}>{region}</option>
-            ))}
-          </select>
-          <span id="region-help" className="field-help">Where will the engagement be based?</span>
-        </div>
-
-        <div className="field-block field-block-wide">
-          <label htmlFor="message">Message *</label>
-          <textarea
-            id="message"
-            name="message"
-            rows={7}
-            minLength={contactFieldLimits.message.min}
-            maxLength={contactFieldLimits.message.max}
-            value={values.message}
-            onChange={handleChange}
-            aria-invalid={Boolean(errors.message)}
-            aria-describedby="message-help message-error"
-          />
-          <span id="message-help" className="field-help">Include timelines, systems, frameworks, or urgent concerns.</span>
-          {errors.message && <span id="message-error" className="field-error">{errors.message}</span>}
-        </div>
-      </div>
-
-      {turnstileSiteKey && (
-        <div className="contact-security-check">
-          <div ref={turnstileContainerRef} />
+      {status === "success" && (
+        <div className="cx-success" role="status">
+          <span className="cx-success-icon">
+            <PiCheckCircleDuotone aria-hidden="true" focusable="false" />
+          </span>
+          <p className="eyebrow">Enquiry received</p>
+          <h2>Thank you. We&rsquo;re on it.</h2>
+          <p>
+            Your enquiry has been sent to our team. Expect a reply from a
+            specialist within one business day.
+          </p>
+          <button type="button" className="cx-ghost" onClick={() => setStatus("idle")}>
+            Send another enquiry
+          </button>
         </div>
       )}
 
-      <div className="contact-form-actions">
-        <button className="contact-submit" type="submit" disabled={status === "loading"}>
-          <PiPaperPlaneTiltDuotone aria-hidden="true" focusable="false" />
-          <span>{status === "loading" ? "Sending..." : "Send enquiry"}</span>
-        </button>
-        <p className={`contact-form-status contact-form-status-${status}`} aria-live="polite">
-          {statusMessage}
-        </p>
+      <div className="cx-form-body" hidden={status === "success"}>
+        <div className="cx-form-head">
+          <p className="eyebrow">Send an enquiry</p>
+          <h2>Tell us what you need to protect.</h2>
+          <p>Share the context you can &mdash; the more we know, the sharper our first reply.</p>
+        </div>
+
+        <fieldset className="cx-group">
+          <legend><span>01</span> About you</legend>
+          <div className="cx-grid">
+            <div className="cx-field">
+              <label htmlFor="name">Full name <i>*</i></label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                placeholder="Jane Doe"
+                minLength={contactFieldLimits.name.min}
+                maxLength={contactFieldLimits.name.max}
+                value={values.name}
+                onChange={handleChange}
+                aria-invalid={Boolean(errors.name)}
+                aria-describedby="name-error"
+              />
+              {errors.name && <span id="name-error" className="cx-error">{errors.name}</span>}
+            </div>
+
+            <div className="cx-field">
+              <label htmlFor="email">Work email <i>*</i></label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="jane@company.com"
+                maxLength={contactFieldLimits.email.max}
+                value={values.email}
+                onChange={handleChange}
+                aria-invalid={Boolean(errors.email)}
+                aria-describedby="email-error"
+              />
+              {errors.email && <span id="email-error" className="cx-error">{errors.email}</span>}
+            </div>
+
+            <div className="cx-field cx-field-wide">
+              <label htmlFor="company">Company <small>Optional</small></label>
+              <input
+                id="company"
+                name="company"
+                type="text"
+                autoComplete="organization"
+                placeholder="Where do you work?"
+                maxLength={contactFieldLimits.company.max}
+                value={values.company}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset
+          className={`cx-group${errors.service ? " has-error" : ""}`}
+          aria-describedby="service-error"
+        >
+          <legend><span>02</span> Service area <i>*</i></legend>
+          <div className="cx-chips">
+            {contactServices.map((service) => (
+              <label key={service} className="cx-chip">
+                <input
+                  type="radio"
+                  name="service"
+                  value={service}
+                  checked={values.service === service}
+                  onChange={handleChange}
+                />
+                <span>{service}</span>
+              </label>
+            ))}
+          </div>
+          {errors.service && <span id="service-error" className="cx-error">{errors.service}</span>}
+        </fieldset>
+
+        <fieldset className="cx-group">
+          <legend><span>03</span> Region <small>Optional</small></legend>
+          <div className="cx-chips">
+            {contactRegions.map((region) => (
+              <label key={region} className="cx-chip">
+                <input
+                  type="radio"
+                  name="region"
+                  value={region}
+                  checked={values.region === region}
+                  onChange={handleChange}
+                />
+                <span>{region}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="cx-group">
+          <legend><span>04</span> Your brief <i>*</i></legend>
+          <div className="cx-field">
+            <label htmlFor="message" className="cx-sr">Message</label>
+            <textarea
+              id="message"
+              name="message"
+              rows={4}
+              placeholder="Timelines, systems, frameworks, or urgent concerns..."
+              minLength={contactFieldLimits.message.min}
+              maxLength={contactFieldLimits.message.max}
+              value={values.message}
+              onChange={handleChange}
+              aria-invalid={Boolean(errors.message)}
+              aria-describedby="message-count message-error"
+            />
+            <div className="cx-field-foot">
+              {errors.message ? (
+                <span id="message-error" className="cx-error">{errors.message}</span>
+              ) : (
+                <span />
+              )}
+              <span id="message-count" className="cx-count">
+                {messageLength.toLocaleString()} / {contactFieldLimits.message.max.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </fieldset>
+
+        {turnstileSiteKey && (
+          <div className="contact-security-check">
+            <div ref={turnstileContainerRef} />
+          </div>
+        )}
+
+        <div className="cx-actions">
+          <p className={`cx-status cx-status-${status}`} aria-live="polite">
+            {statusMessage}
+          </p>
+          <button className="cx-submit" type="submit" disabled={status === "loading"}>
+            <PiPaperPlaneTiltDuotone aria-hidden="true" focusable="false" />
+            <span>{status === "loading" ? "Sending..." : "Send enquiry"}</span>
+            <PiArrowRightBold className="cx-submit-arrow" aria-hidden="true" focusable="false" />
+          </button>
+        </div>
       </div>
     </form>
   );

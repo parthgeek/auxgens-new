@@ -1,51 +1,66 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import {
+  PiArrowUpRightBold,
   PiClockCountdownDuotone,
   PiEnvelopeSimpleDuotone,
+  PiGlobeHemisphereWestDuotone,
+  PiLinkedinLogoDuotone,
+  PiMapPinDuotone,
+  PiPhoneDuotone,
+  PiShieldCheckDuotone,
 } from "react-icons/pi";
 import Announce from "../components/Announce";
 import Footer from "../components/Footer";
 import Nav from "../components/Nav";
 import ScrollFade from "../components/ScrollFade";
 import ContactForm from "./ContactForm";
+import { CopyEmail, LocalTime } from "./ContactExtras";
+import "./contact.css";
 
 type Office = {
-  
   label: string;
+  city: string;
   address: string[];
   country: "in" | "us";
   countryName: string;
+  timeZone: string;
   phone?: string;
 };
 
 const offices: Office[] = [
   {
-  
     label: "India operations",
+    city: "Bengaluru",
     address: ["C3834, Brigade Meadows", "Udayapura, Bengaluru 560082"],
     country: "in",
     countryName: "India",
+    timeZone: "Asia/Kolkata",
   },
   {
-  
     label: "United States of America operations",
-    address: [
-      "Office 242, 1205 BMC Drive",
-      "Cedar Park, Austin, TX 78613",
-    ],
+    city: "Austin, Texas",
+    address: ["Office 242, 1205 BMC Drive", "Cedar Park, Austin, TX 78613"],
     country: "us",
     countryName: "United States",
+    timeZone: "America/Chicago",
     phone: "+1 360 875 2205",
   },
 ];
 
-const responseNotes = [
-  { label: "Primary inbox", value: "contact@auxgens.net" },
-  { label: "Response window", value: "1 business day" },
-  { label: "Coverage", value: "Asia, EMEA, United States of America" },
+const heroStats = [
+  { icon: PiClockCountdownDuotone, value: "1 day", label: "Response window" },
+  { icon: PiGlobeHemisphereWestDuotone, value: "3 regions", label: "Asia · EMEA · USA" },
+  { icon: PiShieldCheckDuotone, value: "2 hubs", label: "Bengaluru & Austin" },
 ];
 
+const coverage = [
+  { label: "Response window", value: "1 business day" },
+  { label: "Coverage", value: "Asia · EMEA · USA" },
+  { label: "Engagements", value: "Remote & on-site" },
+];
+
+const email = "contact@auxgens.net";
 const linkedInUrl = "https://www.linkedin.com/company/auxgen";
 
 export const metadata: Metadata = {
@@ -59,113 +74,144 @@ export default function ContactUsPage() {
     <>
       <Nav />
       <Announce />
-      <main className="contact-page">
-        <section className="contact-hero">
-          <div className="wrap contact-hero-grid contact-hero-form-grid">
-            <ContactForm />
-
-            <aside className="contact-command anim d1" aria-label="Contact summary">
-              <div className="contact-command-top">
-                <span>Primary contact</span>
-                <PiClockCountdownDuotone aria-hidden="true" focusable="false" />
-              </div>
-              <a className="contact-email-large" href="mailto:contact@auxgens.net">
-                contact@auxgens.net
-              </a>
-              <div className="contact-signal-list">
-                {responseNotes.map((note) => (
-                  <div key={note.label} className="contact-signal-row">
-                    <span>{note.label}</span>
-                    <strong>{note.value}</strong>
-                  </div>
-                ))}
-              </div>
-              <a href="mailto:contact@auxgens.net" className="btn-lime btn-icon contact-email-action">
-                <PiEnvelopeSimpleDuotone aria-hidden="true" focusable="false" />
-                <span>Email sales</span>
-              </a>
-            </aside>
+      <main className="cx-page">
+        <section className="cx-hero" aria-labelledby="cx-hero-title">
+          <div className="cx-hero-orbit" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <div className="cx-hero-logo">
+              <Image
+                src="/logo_3d.gif"
+                alt=""
+                width={360}
+                height={285}
+                unoptimized
+                priority
+              />
+            </div>
+          </div>
+          <div className="wrap cx-hero-inner">
+            <h1 id="cx-hero-title" className="anim">
+              Let&rsquo;s secure <em>what&rsquo;s next.</em>
+            </h1>
+            <p className="cx-hero-intro anim d1">
+              Whether you need a SOC, a virtual CISO, AI engineers embedded in your
+              team, or audit-ready compliance, tell us where you are and we&rsquo;ll
+              map the shortest path to where you need to be.
+            </p>
+            <ul className="cx-stats anim d2">
+              {heroStats.map(({ icon: Icon, value, label }) => (
+                <li key={label}>
+                  <Icon aria-hidden="true" focusable="false" />
+                  <span>
+                    <strong>{value}</strong>
+                    <small>{label}</small>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        <section className="contact-content">
+        <section className="cx-stage">
           <div className="wrap">
-            <div className="contact-details contact-details-panel anim">
-              <p className="eyebrow">Contact</p>
-              <h2>Direct lines and office addresses.</h2>
-              <p className="contact-details-copy">
-                Send your enquiry to the Auxgens sales inbox, or reference the
-                closest office for regional coordination.
-              </p>
+            <div className="cx-shell anim">
+              <aside className="cx-aside" aria-label="Contact summary">
+                <div className="cx-aside-glow" aria-hidden="true" />
 
-              <div className="contact-channel-list">
-                <a className="contact-email-card" href="mailto:contact@auxgens.net">
-                  <span className="contact-card-icon" style={{ width: 'auto', height: 'auto' }}>
-                    <Image
-                      className="contact-channel-image"
-                      src="/gmail-removebg-preview.png"
-                      alt=""
-                      width={60}
-                      height={60}
-                      style={{ width: '45px', height: '45px', objectFit: 'contain' }}
-                    />
-                  </span>
-                  <span>
-                    <small>Email</small>
-                    <strong>contact@auxgens.net</strong>
-                  </span>
-                </a>
+                <div className="cx-aside-block">
+                  <p className="cx-aside-eyebrow">Direct line</p>
+                  <a className="cx-email" href={`mailto:${email}`}>
+                    {email}
+                  </a>
+                  <div className="cx-email-actions">
+                    <a className="cx-btn-light" href={`mailto:${email}`}>
+                      <PiEnvelopeSimpleDuotone aria-hidden="true" focusable="false" />
+                      <span>Email sales</span>
+                    </a>
+                    <CopyEmail email={email} />
+                  </div>
+                </div>
+
+                <div className="cx-aside-block">
+                  <p className="cx-aside-eyebrow">At a glance</p>
+                  <div className="cx-coverage">
+                    {coverage.map((item) => (
+                      <div key={item.label}>
+                        <span>{item.label}</span>
+                        <strong>{item.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 <a
-                  className="contact-email-card"
+                  className="cx-linkedin"
                   href={linkedInUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <span className="contact-card-icon" style={{ width: 'auto', height: 'auto' }}>
-                    <Image
-                      className="contact-channel-image"
-                      src="/linkedin-removebg-preview.png"
-                      alt=""
-                      width={40}
-                      height={40}
-                      style={{ width: '40px', height: '40px', objectFit: 'contain' }}
-                    />
-                  </span>
+                  <PiLinkedinLogoDuotone aria-hidden="true" focusable="false" />
                   <span>
-                    <small>LinkedIn</small>
+                    <small>Follow along</small>
                     <strong>Auxgens on LinkedIn</strong>
                   </span>
+                  <PiArrowUpRightBold className="cx-arrow" aria-hidden="true" focusable="false" />
                 </a>
-              </div>
+              </aside>
 
-              <div className="contact-office-grid">
-                {offices.map((office) => (
-                  <article key={office.country} className="contact-office-card">
-                    <span className="contact-card-icon">
-                      <span
-                        className={`flag-mark flag-mark-${office.country} contact-flag`}
-                        aria-label={`${office.countryName} flag`}
-                        role="img"
-                      />
-                    </span>
-                    <div>
-                      <small>{office.label}</small>
-                      <h3>{office.countryName}</h3>
-                      <address>
+              <ContactForm />
+            </div>
+          </div>
+        </section>
+
+        <section className="cx-offices" aria-labelledby="cx-offices-title">
+          <div className="wrap">
+            <div className="cx-offices-head anim">
+              <p className="eyebrow">Our offices</p>
+              <h2 id="cx-offices-title">
+                Two hubs. <em>One team</em> working around the clock.
+              </h2>
+            </div>
+
+            <div className="cx-office-grid">
+              {offices.map((office, index) => (
+                <article
+                  key={office.country}
+                  className={`cx-office anim${index ? " d1" : ""}`}
+                >
+                  <div className="cx-office-top">
+                    <span
+                      className={`flag-mark flag-mark-${office.country} cx-flag`}
+                      aria-label={`${office.countryName} flag`}
+                      role="img"
+                    />
+                    <LocalTime timeZone={office.timeZone} />
+                  </div>
+                  <small>{office.label}</small>
+                  <h3>{office.city}</h3>
+                  <address>
+                    <span className="cx-office-line">
+                      <PiMapPinDuotone aria-hidden="true" focusable="false" />
+                      <span>
                         {office.address.map((line) => (
                           <span key={line}>{line}</span>
                         ))}
-                        {office.phone && (
-                          <a href={`tel:${office.phone.replace(/\s/g, "")}`}>
-                            {office.phone}
-                          </a>
-                        )}
-                      </address>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                      </span>
+                    </span>
+                    {office.phone && (
+                      <a
+                        className="cx-office-line"
+                        href={`tel:${office.phone.replace(/\s/g, "")}`}
+                      >
+                        <PiPhoneDuotone aria-hidden="true" focusable="false" />
+                        <span>{office.phone}</span>
+                      </a>
+                    )}
+                  </address>
+                </article>
+              ))}
             </div>
           </div>
         </section>

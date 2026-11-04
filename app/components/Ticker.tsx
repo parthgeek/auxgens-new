@@ -79,6 +79,22 @@ const brands = {
       <img className="brand-logo-img" src="/cyanofabric-logo-full.png" alt="" loading="lazy" />
     ),
   },
+  cisoPrime: {
+    id: "ciso-prime",
+    name: "CISO Prime",
+    url: "https://www.cisoprime.io/",
+    logo: (
+      <img className="brand-logo-img" src="/ciso-prime-logo.png" alt="" loading="lazy" />
+    ),
+  },
+  daab: {
+    id: "daab",
+    name: "DAAB",
+    url: "https://daab.app/",
+    logo: (
+      <img className="brand-logo-img" src="/daab-logo.svg" alt="" loading="lazy" />
+    ),
+  },
 };
 
 const items = [
@@ -92,6 +108,8 @@ const items = [
   brands.virtusa,
   brands.bankOfIndia,
   brands.cyanofabric,
+  brands.cisoPrime,
+  brands.daab,
 ];
 
 export default function Ticker() {

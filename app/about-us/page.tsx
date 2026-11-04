@@ -168,6 +168,8 @@ export default function AboutPage() {
           </div>
         </section>
 
+        <Stats />
+
         {/* ── CERTIFICATIONS ── */}
         <section className="section section-alt about-certs-section">
           <div className="wrap">
@@ -194,7 +196,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <Stats />
         <CTA />
       </main>
       <Footer />
