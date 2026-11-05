@@ -5,4 +5,5 @@ export function activityDate(date = new Date()) {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
+
 }
