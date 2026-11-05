@@ -246,7 +246,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <p className="about-quote prod-partner-quote">{product.partnership}</p>
             </div>
             <div className="prod-related anim d1">
-              <p className="prod-related-label">Explore other products</p>
+              {otherProducts.length > 0 && (
+                <p className="prod-related-label">Explore other products</p>
+              )}
               {otherProducts.map((other) => (
                 <a key={other.slug} href={`/products/${other.slug}`} className="prod-related-card">
                   <div className={`prod-logo-plate prod-logo-${other.logo.tone} prod-logo-sm`}>

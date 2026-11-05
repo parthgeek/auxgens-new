@@ -14,7 +14,7 @@ import { products } from "../data/products";
 export const metadata: Metadata = {
   title: "Products | Auxgens",
   description:
-    "Auxgens product platforms — CyanoRisk for converged, priced cyber risk (CyVaR) and CISOPrime for cyber & AI risk governance and assurance.",
+    "Explore CISOPrime with Auxgens for cyber & AI risk governance and assurance.",
 };
 
 export default function ProductsPage() {
@@ -32,13 +32,12 @@ export default function ProductsPage() {
               Know what to <em>do next.</em>
             </h1>
             <p className="prod-hero-desc">
-              Understand what cyber risk could cost your business with CyanoRisk.
               Use CISOPrime to manage cyber and AI risk, assign responsibility,
               and track progress. Together with Auxgens advisors, your teams can
               decide where to focus and see how their actions reduce risk.
             </p>
             <div className="about-hero-meta">
-              <span>{products.length} platforms</span>
+              <span>{products.length} {products.length === 1 ? "platform" : "platforms"}</span>
               <span className="about-meta-sep" />
               <span>Cyber risk quantification</span>
               <span className="about-meta-sep" />
