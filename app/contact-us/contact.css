@@ -10,10 +10,8 @@
   padding: clamp(2.8rem, 5vw, 4.2rem) 0 clamp(7rem, 10vw, 8.5rem);
   color: #fff;
   background:
-    radial-gradient(ellipse 60% 70% at 85% 10%, rgba(46,159,154,.32), transparent 65%),
-    radial-gradient(ellipse 50% 60% at 8% 100%, rgba(114,193,53,.28), transparent 70%),
-    radial-gradient(ellipse 40% 50% at 55% 55%, rgba(47,111,179,.18), transparent 70%),
-    var(--grad-forest);
+    linear-gradient(160deg, rgba(9,27,44,.96) 0%, rgba(10,36,29,.92) 60%, rgba(14,42,18,.88) 100%),
+    url('/contact-cyber-bg.png') center / cover no-repeat;
   isolation: isolate;
 }
 .cx-hero::before {
@@ -23,20 +21,8 @@
   z-index: -1;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px) 0 0 / 3.2rem 3.2rem,
-    linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px) 0 0 / 3.2rem 3.2rem;
-  mask-image: radial-gradient(ellipse 80% 80% at 60% 30%, #000 20%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 60% 30%, #000 20%, transparent 80%);
-}
-.cx-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: url('/contact-cyber-bg.png') right center / cover no-repeat;
-  opacity: .12;
-  mix-blend-mode: screen;
+    radial-gradient(ellipse 55% 70% at 80% 50%, rgba(114,193,53,.08) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 60% at 15% 30%, rgba(47,111,179,.1) 0%, transparent 65%);
 }
 .cx-hero-orbit {
   position: absolute;
