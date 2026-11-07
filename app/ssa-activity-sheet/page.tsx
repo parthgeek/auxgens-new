@@ -11,6 +11,8 @@ export const metadata: Metadata = {
     "Shared SSA and JSSA workboards for the Auxgens team to record and follow activities.",
 };
 
+
+
 export default function SSAActivitySheetPage() {
   return (
     <>
