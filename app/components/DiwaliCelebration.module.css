@@ -33,10 +33,11 @@
 
 .poster {
   position: relative;
-  width: min(640px, 100%, calc(100dvh - 100px));
+  /* The GIF is portrait (960x1493), so cap width by the viewport height too. */
+  width: min(480px, 100%, calc((100dvh - 100px) * 960 / 1493));
   border: 1px solid rgba(255, 222, 154, 0.8);
   border-radius: 12px;
-  background: #fff0d5;
+  background: #0a0f33;
   box-shadow: 0 24px 90px rgba(12, 25, 15, 0.4);
   animation: arrive 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }

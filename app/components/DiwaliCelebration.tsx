@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import poster from "../../diwali-wish.png";
+import poster from "../../Auxgens-Deepawali-2026-Gmail.gif";
 import styles from "./DiwaliCelebration.module.css";
 
 type Spark = {
@@ -187,9 +187,11 @@ export default function DiwaliCelebration() {
       <div className={styles.poster}>
         <Image
           src={poster}
-          alt="Happy Deepawali from Auxgens. May the festival of lights bring happiness, good health and prosperity to you and your family. May the light of knowledge, positivity and new opportunities always guide you."
-          sizes="(max-width: 640px) 90vw, 640px"
+          alt="Happy Deepawali 2026 from Auxgens — Securing today for a better tomorrow."
+          sizes="(max-width: 480px) 90vw, 480px"
           className={styles.image}
+          unoptimized
+          priority
         />
         <button
           type="button"
