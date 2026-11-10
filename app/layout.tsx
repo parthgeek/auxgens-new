@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import "./globals.css";
 import ScrollToTop from "./components/ScrollToTop";
-import DiwaliCelebration from "./components/DiwaliCelebration";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -38,7 +37,6 @@ export default function RootLayout({
       <body>
         {children}
         <ScrollToTop />
-        <DiwaliCelebration />
       </body>
     </html>
   );
