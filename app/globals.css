@@ -5098,6 +5098,16 @@ footer::before {
 .prod-hero-logo-caption strong { color: #fff; font-size: 1rem; }
 .prod-hero-logo-caption span { color: rgba(237,247,230,.55); font-size: .9rem; }
 
+/* Product introduction video */
+.prod-video-section { padding-bottom: 0; }
+.prod-video-player {
+  display: block; width: 100%; height: auto; aspect-ratio: 16 / 9;
+  border: 1px solid var(--rule); border-radius: calc(var(--r) * 2);
+  background: var(--deep); object-fit: contain;
+  box-shadow: 0 18px 48px -24px rgba(14,42,18,.24);
+}
+.prod-video-player:focus-visible { outline: 2px solid var(--lime-2); outline-offset: 4px; }
+
 /* Problem */
 .prod-problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .prod-problem-card {

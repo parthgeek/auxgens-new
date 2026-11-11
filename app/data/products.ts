@@ -33,6 +33,12 @@ export type Product = {
     em: string;
     description: string;
   };
+  video?: {
+    src: string;
+    poster: string;
+    title: string;
+    description: string;
+  };
   overview: {
     quote: string;
     paragraphs: string[];
@@ -106,6 +112,13 @@ export const products: Product[] = [
       em: "you can stand behind.",
       description:
         "CISOPrime helps you manage cyber and AI risk with clear responsibilities and evidence behind each decision. Give every action an owner, track progress, and show your board and auditors how risks are being addressed, with support from Auxgens advisors.",
+    },
+    video: {
+      src: "/videos/cisoprime-overview.mp4",
+      poster: "/videos/cisoprime-overview.jpg",
+      title: "Meet Auxgens + CISOPrime.",
+      description:
+        "An introduction to our partnership in cyber and AI risk governance and assurance.",
     },
     overview: {
       quote:

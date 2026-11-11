@@ -133,6 +133,35 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </section>
 
+        {product.video && (
+          <section className="section prod-video-section" aria-labelledby="product-video-title">
+            <div className="wrap">
+              <div className="prod-section-hdr anim">
+                <p className="eyebrow">Watch the introduction</p>
+                <h2 className="prod-h2" id="product-video-title">{product.video.title}</h2>
+                <p className="prod-section-intro" id="product-video-description">
+                  {product.video.description}
+                </p>
+              </div>
+              <video
+                className="prod-video-player"
+                controls
+                playsInline
+                preload="none"
+                poster={product.video.poster}
+                width={1920}
+                height={1080}
+                aria-labelledby="product-video-title"
+                aria-describedby="product-video-description"
+              >
+                <source src={product.video.src} type="video/mp4" />
+                Your browser does not support embedded video.{" "}
+                <a href={product.video.src}>Download the {product.name} introduction</a>.
+              </video>
+            </div>
+          </section>
+        )}
+
         {/* ── CAPABILITIES ── */}
         <section className="section">
           <div className="wrap">
